@@ -7,13 +7,26 @@
     "test": "echo \"Error: no test specified\" && exit 0",
     "lint": "echo \"No linting configured\" && exit 0",
     "build": "echo \"No build step for backend yet\" && exit 0",
-    "dev": "node src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "directories": {
     "test": "tests"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.1",
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }
