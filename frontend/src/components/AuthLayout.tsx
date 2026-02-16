@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { motion } from 'framer-motion';
+const NeuralCore = React.lazy(() => import('./NeuralCore'));
+import ErrorBoundary from './ErrorBoundary';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
@@ -20,14 +22,13 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
                     <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-data/10 rounded-full blur-[100px]" />
                 </div>
 
-                {/* 3D Element Placeholder - In production, lazy load the Spline component here */}
-                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                    {/* Visual Abstract Shape for "Knowledge" */}
-                    <div className="relative w-[400px] h-[400px] animate-slow-spin">
-                        <div className="absolute inset-0 border border-white/5 rounded-full rotate-45" />
-                        <div className="absolute inset-4 border border-white/10 rounded-full -rotate-12" />
-                        <div className="absolute inset-12 border border-plasma/20 rounded-full rotate-90 blur-sm" />
-                    </div>
+                {/* 3D Element */}
+                <div className="absolute inset-0 z-10 w-full h-full overflow-hidden">
+                    <ErrorBoundary>
+                        <Suspense fallback={<div className="flex items-center justify-center w-full h-full text-white/50">Loading 3D...</div>}>
+                            <NeuralCore />
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
 
                 {/* Content Layer */}

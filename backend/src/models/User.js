@@ -11,6 +11,8 @@ const UserSchema = new mongoose.Schema({
   pushEnabled: { type: Boolean, default: true },
   streak: { type: Number, default: 0 },
   lastNotificationDate: { type: Date },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 UserSchema.index({ email: 1 });

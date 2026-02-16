@@ -1,4 +1,6 @@
+require('dotenv').config(); // Load from backend/.env first
 const path = require('path');
+// Also try to load from root if not found (optional, but good for monorepos)
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const express = require('express');
 const mongoose = require('mongoose');
@@ -26,7 +28,10 @@ app.use('/api/auth', authRoutes);
 // Database Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/placeera';
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+    tls: true,
+    tlsAllowInvalidCertificates: true // Sometimes needed for specific network/Atlas configurations
+})
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
