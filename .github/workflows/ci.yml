@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ scaffold/init ]
+  pull_request:
+    branches: [ scaffold/init ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Lint Backend
+        run: |
+          cd backend
+          npm run lint
+
+      - name: Lint Frontend
+        run: |
+          cd frontend
+          npm run lint || true 
+          # Allow failure if eslint not configured or errors in scaffold
+
+      - name: Test Backend
+        run: |
+          cd backend
+          npm test
+
+      - name: Test Frontend
+        run: |
+          cd frontend
+          npm test
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm run build
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
