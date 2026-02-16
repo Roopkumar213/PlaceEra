@@ -29,7 +29,7 @@ const Login: React.FC = () => {
                 password
             });
             login(response.data.token, response.data.user);
-            navigate('/');
+            navigate('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Invalid credentials');
         } finally {
