@@ -84,4 +84,17 @@ router.post('/sync', authMiddleware, async (req, res) => {
     res.json({ message: 'Sync not implemented yet' });
 });
 
+// GET /api/progress/readiness
+router.get('/readiness', authMiddleware, async (req, res) => {
+    try {
+        const { calculateReadiness } = require('../services/readinessEngine');
+        const userId = req.user.id;
+        const readiness = await calculateReadiness(userId);
+        res.json(readiness);
+    } catch (err) {
+        console.error('Readiness Error:', err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;
