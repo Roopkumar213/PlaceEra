@@ -12,6 +12,7 @@ import ResetPassword from './pages/auth/ResetPassword';
 import Home from './pages/Home';
 import Today from './pages/Today';
 import Curriculum from './pages/Curriculum';
+import Progress from './pages/Progress';
 
 function App() {
   return (
@@ -29,7 +30,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/today" element={<Today />} />
             <Route path="/curriculum" element={<Curriculum />} />
-            <Route path="/progress" element={<div className="p-8">Progress (Coming Soon)</div>} />
+            <Route path="/progress" element={<Progress />} />
             <Route path="/settings" element={<div className="p-8">Settings (Coming Soon)</div>} />
           </Route>
         </Route>

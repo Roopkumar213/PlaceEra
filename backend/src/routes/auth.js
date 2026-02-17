@@ -72,7 +72,9 @@ router.post('/login', async (req, res) => {
 
         // DEMO LOGIN BYPASS
         if (email === 'demo@elevare.com' && password === 'demo123') {
-            const payload = { id: 'demo-user-id' };
+            // Use a valid 24-char ObjectId for the demo user
+            const demoId = '507f1f77bcf86cd799439011';
+            const payload = { id: demoId };
 
             jwt.sign(
                 payload,
@@ -83,7 +85,7 @@ router.post('/login', async (req, res) => {
                     res.json({
                         token,
                         user: {
-                            id: 'demo-user-id',
+                            id: demoId,
                             name: 'Demo User',
                             email: 'demo@elevare.com'
                         }
@@ -225,9 +227,10 @@ router.post('/reset-password/:token', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', auth, async (req, res) => {
     try {
-        if (req.user.id === 'demo-user-id') {
+        const demoId = '507f1f77bcf86cd799439011';
+        if (req.user.id === demoId || req.user.id === 'demo-user-id') { // Handle legacy string if somehow token persists
             return res.json({
-                id: 'demo-user-id',
+                id: demoId,
                 name: 'Demo User',
                 email: 'demo@elevare.com',
                 streak: 42

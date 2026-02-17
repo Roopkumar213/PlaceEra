@@ -8,6 +8,8 @@ import { ArrowRight, Zap, Target, BookOpen, Trophy, Loader2 } from 'lucide-react
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
+import { HomeReadinessWidget } from '../components/features/progress/HomeReadinessWidget';
+
 interface DashboardStats {
     streak: number;
     totalLessons: number;
@@ -54,7 +56,10 @@ const Home: React.FC = () => {
                     Your daily structured placement training is ready.
                     Continue your streak and master the curriculum one concept at a time.
                 </p>
-                <div className="flex gap-4 mt-4">
+
+                <HomeReadinessWidget />
+
+                <div className="flex gap-4 mt-2">
                     <Link to="/today">
                         <Button size="lg" className="gap-2">
                             <Zap size={18} /> Start Daily Training
