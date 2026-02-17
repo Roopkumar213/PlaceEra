@@ -133,71 +133,69 @@ const calculateGlobalReadiness = async (userId) => {
         weakestSubject,
         breakdown
     };
-    const UserProgress = require('../models/UserProgress');
+};
 
-    // ... existing code ...
+const calculateLearningState = async (userId) => {
+    // 1. Fetch recent quizzes for velocity
+    // We need at least 10 quizzes to compare 5 vs 5
+    const recentQuizzes = await UserProgress.find({ userId })
+        .sort({ completedAt: -1 })
+        .limit(15) // Fetch a few more for burnout check
+        .select('quizScore quizTotal completedAt');
 
-    const calculateLearningState = async (userId) => {
-        // 1. Fetch recent quizzes for velocity
-        // We need at least 10 quizzes to compare 5 vs 5
-        const recentQuizzes = await UserProgress.find({ userId })
-            .sort({ completedAt: -1 })
-            .limit(15) // Fetch a few more for burnout check
-            .select('quizScore quizTotal completedAt');
+    let velocity = 0;
+    let state = 'Stable';
+    let action = 'Maintain consistency';
 
-        let velocity = 0;
-        let state = 'Stable';
-        let action = 'Maintain consistency';
+    // Velocity Calculation (Part 1)
+    if (recentQuizzes.length >= 10) {
+        const last5 = recentQuizzes.slice(0, 5);
+        const prev5 = recentQuizzes.slice(5, 10);
 
-        // Velocity Calculation (Part 1)
-        if (recentQuizzes.length >= 10) {
-            const last5 = recentQuizzes.slice(0, 5);
-            const prev5 = recentQuizzes.slice(5, 10);
+        const avgLast5 = last5.reduce((sum, q) => sum + (q.quizScore / q.quizTotal * 100), 0) / 5;
+        const avgPrev5 = prev5.reduce((sum, q) => sum + (q.quizScore / q.quizTotal * 100), 0) / 5;
 
-            const avgLast5 = last5.reduce((sum, q) => sum + (q.quizScore / q.quizTotal * 100), 0) / 5;
-            const avgPrev5 = prev5.reduce((sum, q) => sum + (q.quizScore / q.quizTotal * 100), 0) / 5;
+        velocity = avgLast5 - avgPrev5;
 
-            velocity = avgLast5 - avgPrev5;
+        if (velocity > 5) { state = 'Improving Fast'; action = 'Increase difficulty'; }
+        else if (velocity >= 1) { state = 'Improving'; action = 'Maintain momentum'; }
+        else if (velocity <= -5) { state = 'Declining'; action = 'Reduce difficulty'; }
+        else if (velocity <= -1) { state = 'Slight Plateau'; action = 'Focus on weak spots'; }
+    }
 
-            if (velocity > 5) { state = 'Improving Fast'; action = 'Increase difficulty'; }
-            else if (velocity >= 1) { state = 'Improving'; action = 'Maintain momentum'; }
-            else if (velocity <= -5) { state = 'Declining'; action = 'Reduce difficulty'; }
-            else if (velocity <= -1) { state = 'Slight Plateau'; action = 'Focus on weak spots'; }
+    // Plateau Detection (Part 3)
+    // If last 8 quizzes within +/- 3% band
+    if (recentQuizzes.length >= 8) {
+        const last8 = recentQuizzes.slice(0, 8).map(q => (q.quizScore / q.quizTotal * 100));
+        const minScore = Math.min(...last8);
+        const maxScore = Math.max(...last8);
+
+        if ((maxScore - minScore) <= 6) { // +/- 3% means range of 6%
+            state = 'Plateau';
+            action = 'Try new topics or challenge mode';
         }
+    }
 
-        // Plateau Detection (Part 3)
-        // If last 8 quizzes within +/- 3% band
-        if (recentQuizzes.length >= 8) {
-            const last8 = recentQuizzes.slice(0, 8).map(q => (q.quizScore / q.quizTotal * 100));
-            const minScore = Math.min(...last8);
-            const maxScore = Math.max(...last8);
-
-            if ((maxScore - minScore) <= 6) { // +/- 3% means range of 6%
-                state = 'Plateau';
-                action = 'Try new topics or challenge mode';
-            }
+    // Burnout Detection (Part 4)
+    // High streak (>14) AND declining velocity AND increasing failure
+    // Check streak first (assuming simple calc here or passed in, let's fetch roughly)
+    // For MVP, we check just velocity and failures
+    if (velocity < -2 && recentQuizzes.length >= 5) {
+        // Check recent failures (score < 50%)
+        const recentFailures = recentQuizzes.slice(0, 5).filter(q => (q.quizScore / q.quizTotal) < 0.5).length;
+        if (recentFailures >= 2) {
+            // If we had a streak checker here, we'd add it. 
+            // Let's assume high volume means potential burnout
+            state = 'Overtraining Risk';
+            action = 'Reduce intensity for 3 days';
         }
+    }
 
-        // Burnout Detection (Part 4)
-        // High streak (>14) AND declining velocity AND increasing failure
-        // Check streak first (assuming simple calc here or passed in, let's fetch roughly)
-        // For MVP, we check just velocity and failures
-        if (velocity < -2 && recentQuizzes.length >= 5) {
-            // Check recent failures (score < 50%)
-            const recentFailures = recentQuizzes.slice(0, 5).filter(q => (q.quizScore / q.quizTotal) < 0.5).length;
-            if (recentFailures >= 2) {
-                // If we had a streak checker here, we'd add it. 
-                // Let's assume high volume means potential burnout
-                state = 'Overtraining Risk';
-                action = 'Reduce intensity for 3 days';
-            }
-        }
-
-        return {
-            velocity: Math.round(velocity * 10) / 10,
-            learningState: state,
-            recommendedAction: action
-        };
+    return {
+        velocity: Math.round(velocity * 10) / 10,
+        learningState: state,
+        recommendedAction: action
     };
+};
 
-    module.exports = { calculateGlobalReadiness, calculateLearningState, rebuildSubjectMastery };
+module.exports = { calculateGlobalReadiness, calculateLearningState, rebuildSubjectMastery };
