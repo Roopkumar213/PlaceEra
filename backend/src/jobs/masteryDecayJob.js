@@ -1,52 +1,43 @@
 const cron = require('node-cron');
-const TopicMastery = require('../models/TopicMastery');
+const { addDecayJob } = require('../../queues/decayQueue');
+const { addNotificationJob } = require('../../queues/notificationQueue');
 
-const startDecayJob = () => {
-    // Run every day at midnight: '0 0 * * *'
+const startScheduler = () => {
+    console.log('🕒 Scheduler Started.');
+
+    // 1. Mastery Decay (Daily at Midnight)
     cron.schedule('0 0 * * *', async () => {
-        console.log('🔄 Running Mastery Decay Job...');
-        const startTime = Date.now();
-        let updatedCount = 0;
-
+        console.log('🕒 Cron Trigger: Enqueueing Mastery Decay Job...');
         try {
-            // Fetch all mastery records where mastery > 0
-            const cursor = TopicMastery.find({ mastery: { $gt: 0 } }).cursor();
-
-            for await (const doc of cursor) {
-                const lastPracticed = new Date(doc.lastAttemptAt);
-                const today = new Date();
-
-                // Difference in days
-                const diffTime = Math.abs(today - lastPracticed);
-                const daysSince = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (daysSince <= 1) continue; // Don't decay if practiced today or yesterday
-
-                // Exponential Decay Formula: N(t) = N0 * e^(-lambda * t)
-                // user suggested: mastery = mastery * Math.exp(-0.02 * daysSince)
-
-                const decayFactor = Math.exp(-0.02 * daysSince);
-                const oldMastery = doc.mastery;
-                let newMastery = oldMastery * decayFactor;
-
-                // Clamp to 0
-                if (newMastery < 0) newMastery = 0;
-
-                // Optimization: Only update if the change is significant (> 0.5 difference)
-                if (Math.abs(oldMastery - newMastery) > 0.5) {
-                    doc.mastery = newMastery;
-                    await doc.save();
-                    updatedCount++;
-                }
-            }
-
-            const duration = Date.now() - startTime;
-            console.log(`✅ Mastery Decay Job Complete. Updated ${updatedCount} records in ${duration}ms.`);
-
+            await addDecayJob({
+                triggeredAt: new Date(),
+                source: 'cron'
+            });
+            console.log('✅ Decay Job Enqueued.');
         } catch (err) {
-            console.error('❌ Mastery Decay Job Failed:', err);
+            console.error('❌ Failed to enqueue Decay Job:', err);
+        }
+    });
+
+    // 2. Notifications (Daily at 9 AM)
+    // In a real system, we might run this every minute to check user timezones.
+    // For now, simpler implementation: Global batch at 9 AM Server Time.
+    cron.schedule('0 9 * * *', async () => {
+        console.log('🕒 Cron Trigger: Enqueueing Notifications...');
+        try {
+            // In a real scenario, we might query all users here and enqueue 1 job per user
+            // Or enqueue a "BatchNotification" job that the worker expands.
+            // Let's assume we enqueue a "ProcessBatch" job.
+
+            await addNotificationJob({
+                type: 'DAILY_REMINDER_BATCH',
+                triggeredAt: new Date()
+            });
+            console.log('✅ Notification Batch Job Enqueued.');
+        } catch (err) {
+            console.error('❌ Failed to enqueue Notification Job:', err);
         }
     });
 };
 
-module.exports = startDecayJob;
+module.exports = startScheduler;
