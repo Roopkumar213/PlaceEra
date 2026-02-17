@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: production
+    environment:
+      - NODE_ENV=production
+    volumes: []  # No volume mounting in production
+    restart: always
+
+  frontend:
+    restart: always
+
+  mongodb:
+    ports: []  # Don't expose Mongo port in production
+    restart: always
+
+  redis:
+    ports: []  # Don't expose Redis port in production
+    restart: always

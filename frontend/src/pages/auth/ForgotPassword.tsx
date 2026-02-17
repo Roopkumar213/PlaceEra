@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { AuthLayout } from '../components/AuthLayout';
-import { AntigravityInput } from '../components/AntigravityInput';
-import { InteractiveButton } from '../components/InteractiveButton';
+import { AuthLayout } from '../../components/auth/AuthLayout';
+import { AntigravityInput } from '../../components/auth/AntigravityInput';
+import { InteractiveButton } from '../../components/auth/InteractiveButton';
 import { AlertCircle, ArrowLeft, Mail } from 'lucide-react';
 
 const ForgotPassword: React.FC = () => {

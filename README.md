@@ -26,3 +26,38 @@ This is a scaffold for the Daily Placement Training PWA project.
 
 -   **Backend**: Deploy as a Node.js service (e.g. Render, Railway).
 -   **Frontend**: Deploy as a static site (e.g. Vercel, Netlify).
+
+## Docker Setup
+
+### Prerequisites
+- Docker and Docker Compose installed.
+
+### Running with Docker
+
+1.  **Start all services:**
+    ```bash
+    docker-compose up --build
+    ```
+
+2.  **Stop all services:**
+    ```bash
+    docker-compose down
+    ```
+
+3.  **View logs:**
+    ```bash
+    docker-compose logs -f
+    ```
+
+4.  **Service URLs:**
+    - Frontend: http://localhost:3000
+    - Backend: http://localhost:5000
+
+### Production Mode
+
+To run in production mode (using production builds and secure settings):
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+

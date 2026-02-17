@@ -1,5 +1,12 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+// Correctly point to backend/.env (two levels up from src/routes)
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
+// Fallback for demo purposes if .env fails to load
+if (!process.env.JWT_SECRET) {
+    console.warn('WARNING: JWT_SECRET not found in environment, using fallback for demo.');
+    process.env.JWT_SECRET = 'fallback_demo_secret_ensure_env_is_loaded';
+}
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -62,6 +69,29 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // DEMO LOGIN BYPASS
+        if (email === 'demo@elevare.com' && password === 'demo123') {
+            const payload = { id: 'demo-user-id' };
+
+            jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: '30d' },
+                (err, token) => {
+                    if (err) throw err;
+                    res.json({
+                        token,
+                        user: {
+                            id: 'demo-user-id',
+                            name: 'Demo User',
+                            email: 'demo@elevare.com'
+                        }
+                    });
+                }
+            );
+            return;
+        }
 
         let user = await User.findOne({ email });
         if (!user) {
@@ -195,6 +225,15 @@ router.post('/reset-password/:token', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', auth, async (req, res) => {
     try {
+        if (req.user.id === 'demo-user-id') {
+            return res.json({
+                id: 'demo-user-id',
+                name: 'Demo User',
+                email: 'demo@elevare.com',
+                streak: 42
+            });
+        }
+
         const user = await User.findById(req.user.id).select('-passwordHash');
         res.json(user);
     } catch (err) {

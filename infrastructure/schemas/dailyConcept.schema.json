@@ -1,0 +1,82 @@
+{
+    "type": "object",
+    "properties": {
+        "topic": {
+            "type": "string"
+        },
+        "subject": {
+            "type": "string"
+        },
+        "difficulty": {
+            "type": "string",
+            "enum": [
+                "Easy",
+                "Medium",
+                "Hard"
+            ]
+        },
+        "summary": {
+            "type": "string",
+            "minLength": 50
+        },
+        "explanation": {
+            "type": "string",
+            "minLength": 200
+        },
+        "codeExample": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "language",
+                "code"
+            ],
+            "additionalProperties": false
+        },
+        "quiz": {
+            "type": "array",
+            "minItems": 5,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string"
+                    },
+                    "options": {
+                        "type": "array",
+                        "minItems": 4,
+                        "maxItems": 4,
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "correctAnswer": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "question",
+                    "options",
+                    "correctAnswer"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": [
+        "topic",
+        "subject",
+        "difficulty",
+        "summary",
+        "explanation",
+        "codeExample",
+        "quiz"
+    ],
+    "additionalProperties": false
+}

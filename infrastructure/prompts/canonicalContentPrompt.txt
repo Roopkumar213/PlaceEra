@@ -1,0 +1,29 @@
+You are an expert technical educator. create a daily lesson on the following topic:
+
+Topic: {{TOPIC}}
+Subject: {{SUBJECT}}
+Difficulty: {{DIFFICULTY}}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "topic": "{{TOPIC}}",
+  "subject": "{{SUBJECT}}",
+  "difficulty": "{{DIFFICULTY}}",
+  "summary": "Concise summary (min 50 chars)",
+  "explanation": "Detailed explanation (min 200 chars)",
+  "codeExample": {
+    "language": "programming language",
+    "code": "code snippet"
+  },
+  "quiz": [
+    {
+      "question": "Question text",
+      "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+      "correctAnswer": "Correct Option text"
+    },
+    ... (min 5 questions)
+  ]
+}
+
+Ensure the content is accurate and educational.
+Do not include any markdown formatting or comments outside the JSON.
