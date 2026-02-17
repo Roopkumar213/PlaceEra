@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Stars, PerspectiveCamera, Environment, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -61,20 +61,14 @@ const Geometries = () => {
 };
 
 const NeuralCore = () => {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-        return () => setMounted(false);
-    }, []);
-
-    if (!mounted) return null;
+    console.log('NeuralCore component rendering...');
 
     return (
         <div className="w-full h-full absolute inset-0 z-0 bg-nebula">
             <Canvas
                 gl={{ antialias: true, alpha: true }}
                 dpr={[1, 2]}
+                onCreated={() => console.log('Canvas created successfully')}
             >
                 <PerspectiveCamera makeDefault position={[0, 0, 6]} />
                 <ambientLight intensity={0.5} />
@@ -95,3 +89,4 @@ const NeuralCore = () => {
 };
 
 export default NeuralCore;
+

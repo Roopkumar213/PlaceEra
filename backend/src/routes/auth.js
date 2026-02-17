@@ -15,6 +15,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const auth = require('../middleware/authMiddleware');
+const { registerSchema, loginSchema, onboardingSchema, forgotPasswordSchema, resetPasswordSchema } = require('../utils/validationSchemas');
 
 // Set up Nodemailer transporter (Configure with your email service)
 const transporter = nodemailer.createTransport({
@@ -28,7 +29,16 @@ const transporter = nodemailer.createTransport({
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        // Validate input
+        const validation = registerSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path[0], message: e.message }))
+            });
+        }
+
+        const { name, email, password } = validation.data;
 
         let user = await User.findOne({ email });
         if (user) {
@@ -68,32 +78,16 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-
-        // DEMO LOGIN BYPASS
-        if (email === 'demo@elevare.com' && password === 'demo123') {
-            // Use a valid 24-char ObjectId for the demo user
-            const demoId = '507f1f77bcf86cd799439011';
-            const payload = { id: demoId };
-
-            jwt.sign(
-                payload,
-                process.env.JWT_SECRET,
-                { expiresIn: '30d' },
-                (err, token) => {
-                    if (err) throw err;
-                    res.json({
-                        token,
-                        user: {
-                            id: demoId,
-                            name: 'Demo User',
-                            email: 'demo@elevare.com'
-                        }
-                    });
-                }
-            );
-            return;
+        // Validate input
+        const validation = loginSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path[0], message: e.message }))
+            });
         }
+
+        const { email, password } = validation.data;
 
         let user = await User.findOne({ email });
         if (!user) {
@@ -124,10 +118,69 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// POST /api/auth/onboarding
+router.post('/onboarding', auth, async (req, res) => {
+    try {
+        // Validate input
+        const validation = onboardingSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+            });
+        }
+
+        const { timezone, preferredTimes, onceOrTwice, emailEnabled, pushEnabled } = validation.data;
+
+        // Update user preferences
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            {
+                timezone,
+                preferredTimes,
+                onceOrTwice,
+                emailEnabled,
+                pushEnabled
+            },
+            { new: true }
+        ).select('-passwordHash');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            message: 'Preferences updated successfully',
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                timezone: user.timezone,
+                preferredTimes: user.preferredTimes,
+                onceOrTwice: user.onceOrTwice,
+                emailEnabled: user.emailEnabled,
+                pushEnabled: user.pushEnabled
+            }
+        });
+    } catch (err) {
+        console.error('Onboarding Error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
     try {
-        const { email } = req.body;
+        // Validate input
+        const validation = forgotPasswordSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path[0], message: e.message }))
+            });
+        }
+
+        const { email } = validation.data;
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -193,7 +246,16 @@ router.post('/forgot-password', async (req, res) => {
 // POST /api/auth/reset-password/:token
 router.post('/reset-password/:token', async (req, res) => {
     try {
-        const { password } = req.body;
+        // Validate input
+        const validation = resetPasswordSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path[0], message: e.message }))
+            });
+        }
+
+        const { password } = validation.data;
 
         const user = await User.findOne({
             resetPasswordToken: req.params.token,

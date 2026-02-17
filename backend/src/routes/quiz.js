@@ -7,16 +7,22 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 const RevisionQueue = require('../models/RevisionQueue');
 const SubjectMastery = require('../models/SubjectMastery');
+const { quizSubmissionSchema } = require('../utils/validationSchemas');
 
 // POST /api/quiz/submit
 router.post('/submit', authMiddleware, async (req, res) => {
     try {
-        const { quizId, score, answers, submissionId } = req.body;
-        const userId = req.user.id; // From authMiddleware
-
-        if (!quizId || score === undefined) {
-            return res.status(400).json({ message: 'Missing quizId or score' });
+        // Validate input
+        const validation = quizSubmissionSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.error.errors.map(e => ({ field: e.path[0], message: e.message }))
+            });
         }
+
+        const { quizId, score, answers, submissionId } = validation.data;
+        const userId = req.user.id; // From authMiddleware
 
         // --- IDEMPOTENCY CHECK ---
         const QuizSubmissionLog = require('../models/QuizSubmissionLog');

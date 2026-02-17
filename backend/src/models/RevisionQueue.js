@@ -37,5 +37,6 @@ const revisionQueueSchema = new mongoose.Schema({
 });
 
 revisionQueueSchema.index({ userId: 1, resolved: 1, scheduledFor: 1 });
+revisionQueueSchema.index({ userId: 1, topic: 1 }, { unique: true }); // Prevent duplicate queue entries
 
 module.exports = mongoose.model('RevisionQueue', revisionQueueSchema);

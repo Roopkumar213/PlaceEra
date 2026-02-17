@@ -3,6 +3,11 @@ const { addDecayJob } = require('../../queues/decayQueue');
 const { addNotificationJob } = require('../../queues/notificationQueue');
 
 const startScheduler = () => {
+    if (!addDecayJob || !addNotificationJob) {
+        console.log('⚠️  Scheduler not started: Queue features are disabled (Redis unavailable)');
+        return;
+    }
+
     console.log('🕒 Scheduler Started.');
 
     // 1. Mastery Decay (Daily at Midnight)

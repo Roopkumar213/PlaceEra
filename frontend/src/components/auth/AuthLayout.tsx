@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { motion } from 'framer-motion';
-const NeuralCore = React.lazy(() => import('./NeuralCore'));
+import NeuralCore from './NeuralCore';
 import ErrorBoundary from './ErrorBoundary';
 
 interface AuthLayoutProps {

@@ -96,12 +96,33 @@ const processDecay = async (job) => {
     }
 };
 
-// --- PROCESSOR: NOTIFICATION LOGIC (Placeholder) ---
+// --- PROCESSOR: NOTIFICATION LOGIC ---
+const emailService = require('../src/services/emailService');
+
 const processNotification = async (job) => {
     console.log(`[Job ${job.id}] 🔔 Processing Notification: ${job.data.type}`);
-    // Simulate work
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.log(`[Job ${job.id}] ✅ Notification Sent to ${job.data.userId}`);
+
+    try {
+        const { userId, type, email, name } = job.data;
+
+        if (type === 'DAILY_LESSON' || type === 'DAILY_REMINDER_BATCH') {
+            // In a real scenario, we'd fetch the specific lesson for the user here
+            // For now, we'll send a generic "Ready for today?" email
+            const lessonStub = {
+                topic: 'Daily Adaptive Challenge',
+                subject: 'Personalized Curriculum'
+            };
+
+            await emailService.sendDailyLesson({ email, name }, lessonStub);
+            console.log(`[Job ${job.id}] ✅ Notification Email Sent to ${email}`);
+        } else {
+            console.log(`[Job ${job.id}] ⚠️ Unknown notification type: ${type}`);
+        }
+
+    } catch (err) {
+        console.error(`[Job ${job.id}] ❌ Notification Failed:`, err.message);
+        throw err; // Trigger retry
+    }
 };
 
 // --- WORKER INSTANCES ---
