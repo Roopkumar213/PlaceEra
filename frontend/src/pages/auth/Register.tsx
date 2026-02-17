@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { AuthLayout } from '../components/AuthLayout';
-import { AntigravityInput } from '../components/AntigravityInput';
-import { InteractiveButton } from '../components/InteractiveButton';
+import { AuthLayout } from '../../components/auth/AuthLayout';
+import { AntigravityInput } from '../../components/auth/AntigravityInput';
+import { InteractiveButton } from '../../components/auth/InteractiveButton';
 import { AlertCircle, Sparkles } from 'lucide-react';
 
 const Register: React.FC = () => {

@@ -24,6 +24,10 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api', require('./routes/daily'));
+app.use('/api/progress', require('./routes/progress'));
+app.use('/api/curriculum', require('./routes/curriculum'));
+app.use('/api/quiz', require('./routes/quiz'));
 
 // Database Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/placeera';
