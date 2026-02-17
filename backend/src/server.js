@@ -24,7 +24,15 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+<<<<<<< HEAD
 app.use('/api', require('./routes/taskRoutes'));
+=======
+app.use('/api', require('./routes/daily'));
+app.use('/api/progress', require('./routes/progress'));
+app.use('/api/curriculum', require('./routes/curriculum'));
+app.use('/api/quiz', require('./routes/quiz'));
+app.use('/api/system', require('./routes/system'));
+>>>>>>> d745bebe8885f5257535b76286ab4174c11d9897
 
 // Database Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/placeera';
@@ -35,6 +43,10 @@ mongoose.connect(MONGO_URI, {
 })
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
+
+// Jobs
+const startDecayJob = require('./jobs/masteryDecayJob');
+startDecayJob();
 
 const PORT = process.env.PORT || 5000;
 

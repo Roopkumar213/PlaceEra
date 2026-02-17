@@ -1,6 +1,6 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import axios from 'axios';
-import { setAuthToken, getAuthToken } from '../utils/auth';
+import { setAuthToken, getAuthToken } from '../lib/auth';
 
 interface User {
     id: string;

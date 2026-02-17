@@ -1,5 +1,12 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+// Correctly point to backend/.env (two levels up from src/routes)
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
+// Fallback for demo purposes if .env fails to load
+if (!process.env.JWT_SECRET) {
+    console.warn('WARNING: JWT_SECRET not found in environment, using fallback for demo.');
+    process.env.JWT_SECRET = 'fallback_demo_secret_ensure_env_is_loaded';
+}
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -62,6 +69,31 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // DEMO LOGIN BYPASS
+        if (email === 'demo@elevare.com' && password === 'demo123') {
+            // Use a valid 24-char ObjectId for the demo user
+            const demoId = '507f1f77bcf86cd799439011';
+            const payload = { id: demoId };
+
+            jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: '30d' },
+                (err, token) => {
+                    if (err) throw err;
+                    res.json({
+                        token,
+                        user: {
+                            id: demoId,
+                            name: 'Demo User',
+                            email: 'demo@elevare.com'
+                        }
+                    });
+                }
+            );
+            return;
+        }
 
         let user = await User.findOne({ email });
         if (!user) {
@@ -195,6 +227,16 @@ router.post('/reset-password/:token', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', auth, async (req, res) => {
     try {
+        const demoId = '507f1f77bcf86cd799439011';
+        if (req.user.id === demoId || req.user.id === 'demo-user-id') { // Handle legacy string if somehow token persists
+            return res.json({
+                id: demoId,
+                name: 'Demo User',
+                email: 'demo@elevare.com',
+                streak: 42
+            });
+        }
+
         const user = await User.findById(req.user.id).select('-passwordHash');
         res.json(user);
     } catch (err) {
