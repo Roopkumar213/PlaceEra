@@ -3,6 +3,7 @@ const router = express.Router();
 const DailyConcept = require('../models/DailyConcept');
 const AdminReview = require('../models/AdminReview');
 const TopicMastery = require('../models/TopicMastery');
+const mongoose = require('mongoose');
 const RevisionQueue = require('../models/RevisionQueue');
 const authMiddleware = require('../middleware/authMiddleware');
 const { generateLesson } = require('../services/llmService');
@@ -74,67 +75,107 @@ router.get('/today', authMiddleware, async (req, res) => {
             }
         }
 
-        // C. Weighted Buckets (Priority 3)
+        // C. Weighted Buckets (Priority 3) — OPTIMIZED AGGREGATION
+        // C. Weighted Buckets (Priority 3) — OPTIMIZED AGGREGATION
         if (!targetTopicData) {
-            const masteryRecords = await TopicMastery.find({ userId });
+            // Aggregation to Select Topic with weighted bias directly.
+            // 1. Label Buckets
+            // 2. Sample from each bucket? 
+            // Better: Get counts, decide bucket validity, then query specific bucket.
+            // Querying all topics just to bucket them is still expensive (100k items).
 
-            // Map records to check against ROADMAP
-            const masteryMap = {};
-            masteryRecords.forEach(r => masteryMap[r.topic] = r.mastery);
+            // We can't do random weighted selection purely in one agg pipeline easily without fetching all.
+            // HYBRID APPROACH:
+            // 1. Facet to get counts of each bucket (Fast index scan if covered)
+            // 2. Roll dice to pick bucket.
+            // 3. $sample ONE document from that bucket.
 
-            // Classify Roadmap Topics
-            const buckets = {
-                critical: [], // < 40
-                weak: [],     // 40-60
-                moderate: [], // 60-75
-                strong: [],   // 75-90
-                mastered: [], // > 90
-                new: []       // No record
-            };
+            const bucketCounts = await TopicMastery.aggregate([
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+                {
+                    $project: {
+                        bucket: {
+                            $switch: {
+                                branches: [
+                                    { case: { $lt: ['$mastery', 40] }, then: 'critical' },
+                                    { case: { $lt: ['$mastery', 60] }, then: 'weak' },
+                                    { case: { $lt: ['$mastery', 80] }, then: 'moderate' },
+                                    { case: { $lt: ['$mastery', 95] }, then: 'strong' }
+                                ],
+                                default: 'mastered'
+                            }
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$bucket',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]);
 
-            ROADMAP_TOPICS.forEach(item => {
-                const m = masteryMap[item.topic];
-                if (m === undefined) buckets.new.push(item);
-                else if (m < 40) buckets.critical.push(item);
-                else if (m < 60) buckets.weak.push(item);
-                else if (m < 75) buckets.moderate.push(item);
-                else if (m < 90) buckets.strong.push(item);
-                else buckets.mastered.push(item);
-            });
+            const map = { critical: 0, weak: 0, moderate: 0, strong: 0, mastered: 0 };
+            bucketCounts.forEach(b => map[b._id] = b.count);
 
-            // If we have "New" topics and user hasn't started, prioritize them?
-            // Or mix them into "Critical" (since 0 mastery). 
-            // Let's treat "New" as "Critical" for now to get them started.
-            buckets.critical.push(...buckets.new);
-
-            // Weighted Selection
-            // Probabilities: Critical 35%, Weak 30%, Moderate 20%, Strong 10%, Mastered 5%
+            // Determine Target Bucket
             const rand = Math.random() * 100;
-            let selectedBucket = null;
+            let targetBucket = 'critical';
 
-            if (rand < 35 && buckets.critical.length) selectedBucket = buckets.critical;
-            else if (rand < 65 && buckets.weak.length) selectedBucket = buckets.weak; // 35+30
-            else if (rand < 85 && buckets.moderate.length) selectedBucket = buckets.moderate; // 65+20
-            else if (rand < 95 && buckets.strong.length) selectedBucket = buckets.strong; // 85+10
-            else if (buckets.mastered.length) selectedBucket = buckets.mastered; // 95+5
-
-            // Fallbacks if bucket empty
-            if (!selectedBucket || selectedBucket.length === 0) {
-                // Pick any from Critical -> Weak -> New -> Moderate
-                if (buckets.critical.length) selectedBucket = buckets.critical;
-                else if (buckets.weak.length) selectedBucket = buckets.weak;
-                else if (buckets.moderate.length) selectedBucket = buckets.moderate;
-                else if (buckets.strong.length) selectedBucket = buckets.strong;
-                else selectedBucket = buckets.mastered;
+            // Probabilities: Critical 35%, Weak 30%, Moderate 20%, Strong 10%, Mastered 5%
+            if (rand < 35 && map.critical) targetBucket = 'critical';
+            else if (rand < 65 && map.weak) targetBucket = 'weak';
+            else if (rand < 85 && map.moderate) targetBucket = 'moderate';
+            else if (rand < 95 && map.strong) targetBucket = 'strong';
+            else if (map.mastered) targetBucket = 'mastered';
+            else {
+                // Fallback to whatever exists
+                if (map.critical) targetBucket = 'critical';
+                else if (map.weak) targetBucket = 'weak';
+                else if (map.moderate) targetBucket = 'moderate';
+                else if (map.strong) targetBucket = 'strong';
+                else targetBucket = 'mastered';
             }
 
-            if (selectedBucket && selectedBucket.length > 0) {
-                const idx = Math.floor(Math.random() * selectedBucket.length);
-                targetTopicData = selectedBucket[idx];
-                selectionReason = 'weighted_bucket';
-                console.log(`Adaptive: Selected ${targetTopicData.topic} via Weighted Bucket.`);
-            } else {
-                // Worst case fallback
+            // Fetch ONE topic from this bucket using $sample
+            let rangeBefore = 0;
+            let rangeAfter = 0;
+
+            switch (targetBucket) {
+                case 'critical': rangeBefore = 0; rangeAfter = 40; break;
+                case 'weak': rangeBefore = 40; rangeAfter = 60; break;
+                case 'moderate': rangeBefore = 60; rangeAfter = 80; break;
+                case 'strong': rangeBefore = 80; rangeAfter = 95; break;
+                case 'mastered': rangeBefore = 95; rangeAfter = 101; break;
+            }
+
+            // Optimization: If map[targetBucket] is 0, we might need a backup plan (handled by fallback logic above)
+            // But if ALL are 0 (New user?), we default to roadmap.
+
+            if (map[targetBucket] > 0) {
+                const samples = await TopicMastery.aggregate([
+                    {
+                        $match: {
+                            userId: new mongoose.Types.ObjectId(userId),
+                            mastery: { $gte: rangeBefore, $lt: rangeAfter } // Use range
+                        }
+                    },
+                    { $sample: { size: 1 } },
+                    { $project: { topic: 1, subject: 1 } }
+                ]);
+
+                if (samples.length > 0) {
+                    targetTopicData = samples[0];
+                    targetTopicData.difficulty = 'Medium'; // Default
+                    selectionReason = `weighted_bucket_${targetBucket}`;
+                    console.log(`Adaptive: Selected ${targetTopicData.topic} from ${targetBucket} bucket.`);
+                }
+            }
+
+            // Fallback for Cold Start or empty DB
+            if (!targetTopicData) {
+                // Check New Topics? (Not in DB)
+                // Just pick from Roadmap
                 targetTopicData = ROADMAP_TOPICS[0];
             }
         }
@@ -174,6 +215,44 @@ router.get('/today', authMiddleware, async (req, res) => {
                 return res.status(500).json({ error: "Failed to generate lesson content." });
             }
         }
+
+        // Guard: Duplicate Prevention (Phase 6)
+        // Check if we selected this topic yesterday (Rotation Log)
+        const LearningEventLog = require('../models/LearningEventLog');
+        const yesterday = new Date(Date.now() - 86400000);
+
+        // If not from Revision Queue (which overrides duplicates), check history
+        if (selectionReason !== 'revision_queue') {
+            const lastRotation = await LearningEventLog.findOne({
+                userId,
+                eventType: 'ROTATION_SELECTED',
+                timestamp: { $gt: yesterday }
+            }).sort({ timestamp: -1 });
+
+            if (lastRotation && lastRotation.topicId === targetTopicData.topic) {
+                console.log(`⚠️ Prevented duplicate topic: ${targetTopicData.topic}. Reselecting...`);
+                // Simple fallback: pick random from roadmap that isn't this one
+                const candidates = ROADMAP_TOPICS.filter(t => t.topic !== targetTopicData.topic);
+                if (candidates.length > 0) {
+                    const fallback = candidates[Math.floor(Math.random() * candidates.length)];
+                    targetTopicData = fallback;
+                    selectionReason = 'duplicate_prevention_fallback';
+                }
+            }
+        }
+
+        // LOG OBSERVABILITY EVENT
+        // We log *before* generating potential errors so we track intent
+        LearningEventLog.create({
+            userId,
+            topicId: targetTopicData.topic,
+            subject: targetTopicData.subject,
+            eventType: 'ROTATION_SELECTED',
+            previousMastery: 0, // Not applicable
+            newMastery: 0,
+            delta: 0,
+            meta: { selectionReason }
+        }).catch(err => console.error('Observability Log Failed:', err.message));
 
         // Return the concept
         res.json({

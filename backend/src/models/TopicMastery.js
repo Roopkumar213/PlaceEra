@@ -65,6 +65,10 @@ const topicMasterySchema = new mongoose.Schema({
 
 // Compound index for quick lookup
 topicMasterySchema.index({ userId: 1, topic: 1 }, { unique: true });
-topicMasterySchema.index({ userId: 1, subject: 1 }); // For subject aggregation
+topicMasterySchema.index({ userId: 1, subject: 1 });
+// Performance indexes for Decay Job and Analytics
+topicMasterySchema.index({ mastery: 1 });
+topicMasterySchema.index({ lastAttemptAt: 1 }); // Needed for Decay Job
+topicMasterySchema.index({ userId: 1, mastery: 1 }); // Useful for Daily Rotation Analysis
 
 module.exports = mongoose.model('TopicMastery', topicMasterySchema);
