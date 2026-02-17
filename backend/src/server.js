@@ -26,6 +26,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', require('./routes/daily'));
 app.use('/api/progress', require('./routes/progress'));
+app.use('/api/debug', require('./routes/debug')); // New Debug Route
+
 app.use('/api/curriculum', require('./routes/curriculum'));
 app.use('/api/quiz', require('./routes/quiz'));
 

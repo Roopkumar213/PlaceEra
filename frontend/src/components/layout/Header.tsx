@@ -8,7 +8,8 @@ import {
     Target,
     Settings,
     LogOut,
-    Menu
+    Menu,
+    Gauge
 } from 'lucide-react';
 
 
@@ -19,6 +20,7 @@ export const Header: React.FC = () => {
     const navItems = [
         { label: 'Today', path: '/today', icon: Target },
         { label: 'Curriculum', path: '/curriculum', icon: BookOpen },
+        { label: 'Readiness', path: '/dashboard', icon: Gauge },
         { label: 'Progress', path: '/progress', icon: LayoutDashboard },
     ];
 

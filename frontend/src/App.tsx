@@ -13,6 +13,7 @@ import Home from './pages/Home';
 import Today from './pages/Today';
 import Curriculum from './pages/Curriculum';
 import Progress from './pages/Progress';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/today" element={<Today />} />
             <Route path="/curriculum" element={<Curriculum />} />
             <Route path="/progress" element={<Progress />} />

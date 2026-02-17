@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Badge } from '../components/ui/badge';
-import { ArrowRight, Zap, Target, BookOpen, Trophy, Loader2 } from 'lucide-react';
+import { ArrowRight, Zap, Target, BookOpen, Trophy, Loader2, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -12,9 +12,11 @@ import { HomeReadinessWidget } from '../components/features/progress/HomeReadine
 
 interface DashboardStats {
     streak: number;
-    totalLessons: number;
-    weakTopics: { topic: string; proficiency: number }[];
-    recentActivity: any[];
+    quizzesThisWeek: number;
+    // New fields
+    subjectBreakdown: { subject: string; mastery: number }[];
+    weakestSubject: string;
+    readinessScore: number;
 }
 
 const Home: React.FC = () => {
@@ -41,6 +43,9 @@ const Home: React.FC = () => {
     }, []);
 
     const isLoading = loading || !stats;
+
+    // Helper to count high proficiency subjects
+    const highProficiencyCount = stats?.subjectBreakdown?.filter(s => s.mastery >= 75).length || 0;
 
     return (
         <PageContainer>
@@ -91,44 +96,44 @@ const Home: React.FC = () => {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Topics Mastered</CardTitle>
+                        <CardTitle className="text-sm font-medium">Strong Domains</CardTitle>
                         <Target className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                             <>
-                                <div className="text-2xl font-bold">{stats.weakTopics.filter(t => t.proficiency > 80).length}</div>
-                                <p className="text-xs text-muted-foreground">High proficiency topics</p>
+                                <div className="text-2xl font-bold">{highProficiencyCount}</div>
+                                <p className="text-xs text-muted-foreground">Subjects &gt;75% Mastery</p>
                             </>
                         )}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Lessons Completed</CardTitle>
+                        <CardTitle className="text-sm font-medium">Quizzes This Week</CardTitle>
                         <BookOpen className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                             <>
-                                <div className="text-2xl font-bold">{stats.totalLessons}</div>
-                                <p className="text-xs text-muted-foreground">Total sessions</p>
+                                <div className="text-2xl font-bold">{stats.quizzesThisWeek}</div>
+                                <p className="text-xs text-muted-foreground">Sessions completed</p>
                             </>
                         )}
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Weakest Topic</CardTitle>
+                        <CardTitle className="text-sm font-medium">Focus Area</CardTitle>
                         <Trophy className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                             <>
                                 <div className="text-xl font-bold truncate">
-                                    {stats.weakTopics[0]?.topic || 'None'}
+                                    {stats.weakestSubject || 'N/A'}
                                 </div>
-                                <p className="text-xs text-muted-foreground">Focus on this!</p>
+                                <p className="text-xs text-muted-foreground">Needs improvement</p>
                             </>
                         )}
                     </CardContent>

@@ -74,24 +74,43 @@ router.get('/today', authMiddleware, async (req, res) => {
             }
         }
 
-        // C. Weighted Buckets (Priority 3)
-        if (!targetTopicData) {
-            const masteryRecords = await TopicMastery.find({ userId });
+        // --- ADAPTIVE STRATEGY ENGINE (Part 2) ---
+        // Fetch Learning State
+        const { calculateLearningState } = require('../services/globalReadinessEngine');
+        const adaptiveState = await calculateLearningState(userId);
+        console.log(`Adaptive State for ${userId}: ${adaptiveState.learningState} (Vel: ${adaptiveState.velocity})`);
 
-            // Map records to check against ROADMAP
+        // Modify Probabilities based on State
+        let probCritical = 35, probWeak = 30, probModerate = 20, probStrong = 10, probMastered = 5;
+        let difficultyBias = 'Medium'; // Default
+
+        if (adaptiveState.learningState === 'Improving Fast') {
+            // Increase Hard/Strong/Mastered
+            probCritical -= 10; probWeak -= 5;
+            probStrong += 10; probMastered += 5;
+            difficultyBias = 'Hard'; // Prefer Hard
+        }
+        else if (adaptiveState.learningState === 'Declining' || adaptiveState.learningState === 'Overtraining Risk') {
+            // Reduce difficulty
+            probCritical += 10; probWeak += 10;
+            probModerate += 10; // Reinforce middle
+            probStrong -= 15; probMastered -= 15; // Reduce hard
+            difficultyBias = 'Easy';
+        }
+        else if (adaptiveState.learningState === 'Plateau') {
+            // Mix Mode: 60% Moderate + 40% Weak
+            probCritical = 0; probWeak = 40; probModerate = 60; probStrong = 0; probMastered = 0;
+            difficultyBias = 'Medium';
+        }
+
+        // Weighted Selection Logic
+        if (!targetTopicData) {
+            // ... Fetch buckets code ...
+            const masteryRecords = await TopicMastery.find({ userId });
             const masteryMap = {};
             masteryRecords.forEach(r => masteryMap[r.topic] = r.mastery);
 
-            // Classify Roadmap Topics
-            const buckets = {
-                critical: [], // < 40
-                weak: [],     // 40-60
-                moderate: [], // 60-75
-                strong: [],   // 75-90
-                mastered: [], // > 90
-                new: []       // No record
-            };
-
+            const buckets = { critical: [], weak: [], moderate: [], strong: [], mastered: [], new: [] };
             ROADMAP_TOPICS.forEach(item => {
                 const m = masteryMap[item.topic];
                 if (m === undefined) buckets.new.push(item);
@@ -101,26 +120,26 @@ router.get('/today', authMiddleware, async (req, res) => {
                 else if (m < 90) buckets.strong.push(item);
                 else buckets.mastered.push(item);
             });
-
-            // If we have "New" topics and user hasn't started, prioritize them?
-            // Or mix them into "Critical" (since 0 mastery). 
-            // Let's treat "New" as "Critical" for now to get them started.
             buckets.critical.push(...buckets.new);
 
-            // Weighted Selection
-            // Probabilities: Critical 35%, Weak 30%, Moderate 20%, Strong 10%, Mastered 5%
+            // Apply Dynamic Probabilities
             const rand = Math.random() * 100;
             let selectedBucket = null;
 
-            if (rand < 35 && buckets.critical.length) selectedBucket = buckets.critical;
-            else if (rand < 65 && buckets.weak.length) selectedBucket = buckets.weak; // 35+30
-            else if (rand < 85 && buckets.moderate.length) selectedBucket = buckets.moderate; // 65+20
-            else if (rand < 95 && buckets.strong.length) selectedBucket = buckets.strong; // 85+10
-            else if (buckets.mastered.length) selectedBucket = buckets.mastered; // 95+5
+            // Cumulative Thresholds
+            const t1 = probCritical;
+            const t2 = t1 + probWeak;
+            const t3 = t2 + probModerate;
+            const t4 = t3 + probStrong;
 
-            // Fallbacks if bucket empty
+            if (rand < t1 && buckets.critical.length) selectedBucket = buckets.critical;
+            else if (rand < t2 && buckets.weak.length) selectedBucket = buckets.weak;
+            else if (rand < t3 && buckets.moderate.length) selectedBucket = buckets.moderate;
+            else if (rand < t4 && buckets.strong.length) selectedBucket = buckets.strong;
+            else if (buckets.mastered.length) selectedBucket = buckets.mastered;
+
+            // Fallbacks... (same as before)
             if (!selectedBucket || selectedBucket.length === 0) {
-                // Pick any from Critical -> Weak -> New -> Moderate
                 if (buckets.critical.length) selectedBucket = buckets.critical;
                 else if (buckets.weak.length) selectedBucket = buckets.weak;
                 else if (buckets.moderate.length) selectedBucket = buckets.moderate;
@@ -131,10 +150,15 @@ router.get('/today', authMiddleware, async (req, res) => {
             if (selectedBucket && selectedBucket.length > 0) {
                 const idx = Math.floor(Math.random() * selectedBucket.length);
                 targetTopicData = selectedBucket[idx];
-                selectionReason = 'weighted_bucket';
-                console.log(`Adaptive: Selected ${targetTopicData.topic} via Weighted Bucket.`);
+
+                // Override difficulty based on bias
+                if (difficultyBias === 'Hard') targetTopicData.difficulty = 'Hard';
+                // Note: We are mutating local obj copy or ref? ROADMAP_TOPICS objects are ref. 
+                // Better to clone.
+                targetTopicData = { ...targetTopicData, difficulty: difficultyBias === 'Hard' ? 'Hard' : targetTopicData.difficulty };
+
+                selectionReason = `weighted_bucket_${adaptiveState.learningState}`;
             } else {
-                // Worst case fallback
                 targetTopicData = ROADMAP_TOPICS[0];
             }
         }
