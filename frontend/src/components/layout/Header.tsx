@@ -8,7 +8,8 @@ import {
     Target,
     Settings,
     LogOut,
-    Menu
+    Menu,
+    ClipboardList
 } from 'lucide-react';
 
 
@@ -20,6 +21,7 @@ export const Header: React.FC = () => {
         { label: 'Today', path: '/today', icon: Target },
         { label: 'Curriculum', path: '/curriculum', icon: BookOpen },
         { label: 'Progress', path: '/progress', icon: LayoutDashboard },
+        { label: 'Mock', path: '/mock', icon: ClipboardList },
     ];
 
     return (

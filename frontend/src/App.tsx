@@ -13,6 +13,7 @@ import Home from './pages/Home';
 import Today from './pages/Today';
 import Curriculum from './pages/Curriculum';
 import Progress from './pages/Progress';
+import MockHistory from './pages/MockHistory';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/today" element={<Today />} />
             <Route path="/curriculum" element={<Curriculum />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/mock" element={<MockHistory />} />
             <Route path="/settings" element={<div className="p-8">Settings (Coming Soon)</div>} />
           </Route>
         </Route>

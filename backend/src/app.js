@@ -30,5 +30,10 @@ app.use('/api/curriculum', require('./routes/curriculum'));
 app.use('/api/quiz', require('./routes/quiz'));
 app.use('/api/system', require('./routes/system'));
 app.use('/api/recommendation', require('./routes/recommendation'));
+app.use('/api/mock', require('./routes/mock'));
+
+// Global Error Handler (Must be last)
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 module.exports = app;

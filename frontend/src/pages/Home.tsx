@@ -4,11 +4,13 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Badge } from '../components/ui/badge';
-import { ArrowRight, Zap, Target, BookOpen, Trophy, Loader2 } from 'lucide-react';
+import { ArrowRight, Zap, Target, BookOpen, Trophy, Loader2, ClipboardList, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
 import { HomeReadinessWidget } from '../components/features/progress/HomeReadinessWidget';
+import { RevisionFocusPanel } from '../components/features/progress/RevisionFocusPanel';
+import { SubjectHeatmapWidget } from '../components/features/progress/SubjectHeatmapWidget';
 
 interface DashboardStats {
     streak: number;
@@ -78,7 +80,7 @@ const Home: React.FC = () => {
 
                 <HomeReadinessWidget />
 
-                <div className="flex gap-4 mt-2">
+                <div className="flex gap-4 mt-2 flex-wrap">
                     <Link to="/today">
                         <Button size="lg" className="gap-2">
                             <Zap size={18} /> Start Daily Training
@@ -89,8 +91,31 @@ const Home: React.FC = () => {
                             View Roadmap <ArrowRight size={18} />
                         </Button>
                     </Link>
+                    <Link to="/mock">
+                        <Button size="lg" variant="outline" className="gap-2 border-primary/50 text-primary hover:bg-primary/10">
+                            <ClipboardList size={18} /> Weekly Mock
+                        </Button>
+                    </Link>
                 </div>
             </section>
+
+            {/* Maintenance Mode Banner: When all subjects are strong */}
+            {!isLoading && recommendation?.status === 'MAINTENANCE' && (
+                <Card className="border-blue-500/30 bg-blue-500/5 mb-6">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-blue-600">
+                            <Wrench size={18} />
+                            Maintenance Focus Mode
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                            All domains are strong — you've entered <strong>maintenance mode</strong>.
+                            Focus on refreshing mastery and preventing decay across your strongest topics.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Day 0 Experience: Onboarding Required */}
             {!isLoading && user && !user.onboardingComplete && (
@@ -271,6 +296,20 @@ const Home: React.FC = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Subject Heatmap */}
+            {!isLoading && (
+                <div className="mt-6">
+                    <SubjectHeatmapWidget />
+                </div>
+            )}
+
+            {/* Revision Focus Panel */}
+            {!isLoading && (
+                <div className="mt-6">
+                    <RevisionFocusPanel />
+                </div>
+            )}
         </PageContainer>
     );
 };

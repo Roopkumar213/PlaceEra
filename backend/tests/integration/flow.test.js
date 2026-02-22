@@ -93,7 +93,7 @@ describe('Full User Journey Integration', () => {
             .set('Authorization', `Bearer ${token}`)
             .send({
                 quizId: quizA._id,
-                score: 1,
+                answers: { 0: '2' }, // Correct answer is '2' for our dummy quiz
                 submissionId: 'test-sub-a'
             });
         expect(resA.statusCode).toBe(200);
@@ -110,7 +110,7 @@ describe('Full User Journey Integration', () => {
             .set('Authorization', `Bearer ${token}`)
             .send({
                 quizId: quizB._id,
-                score: 1,
+                answers: { 0: '2' }, // Correct answer is '2'
                 submissionId: 'test-sub-b'
             });
         expect(resB.statusCode).toBe(200);

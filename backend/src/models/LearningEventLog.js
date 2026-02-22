@@ -18,7 +18,7 @@ const learningEventLogSchema = new mongoose.Schema({
     },
     eventType: {
         type: String,
-        enum: ['QUIZ_SUBMIT', 'DECAY_APPLIED', 'REVISION_TRIGGERED', 'ROTATION_SELECTED', 'TOPIC_UNLOCKED', 'MASTERY_INITIALIZED'],
+        enum: ['QUIZ_SUBMIT', 'DECAY_APPLIED', 'REVISION_TRIGGERED', 'ROTATION_SELECTED', 'TOPIC_UNLOCKED', 'MASTERY_INITIALIZED', 'MOCK_COMPLETED'],
         required: true
     },
     previousMastery: {
