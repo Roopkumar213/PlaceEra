@@ -23,23 +23,71 @@ const CURRICULUM_STRUCTURE = [
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
-        const mastery = await TopicMastery.find({ userId });
+
+        // 1. Auto-initialize if empty
+        const { initializeUserMasteryIfEmpty } = require('../services/masteryService');
+        await initializeUserMasteryIfEmpty(userId);
+
+        const [subjects, topics, mastery] = await Promise.all([
+            require('../models/Subject').find().sort({ orderIndex: 1 }),
+            require('../models/Topic').find().sort({ orderIndex: 1 }),
+            TopicMastery.find({ userId })
+        ]);
 
         // Map mastery to a lookup object
         const masteryMap = {};
         mastery.forEach(m => {
-            masteryMap[m.topic] = m.proficiency;
+            masteryMap[m.topic] = m;
         });
 
-        // Enrich curriculum with user status
-        const curriculum = CURRICULUM_STRUCTURE.map(module => ({
-            ...module,
-            topics: module.topics.map(topic => ({
-                name: topic,
-                proficiency: masteryMap[topic] || 0,
-                status: (masteryMap[topic] || 0) > 80 ? 'Mastered' : (masteryMap[topic] > 0 ? 'In Progress' : 'Locked') // Simple logic
-            }))
-        }));
+        let curriculum;
+
+        if (subjects.length > 0) {
+            // Group topics by subject from DB
+            curriculum = subjects.map(sub => {
+                const subTopics = topics.filter(t => t.subject === sub.name);
+                return {
+                    module: sub.name,
+                    topics: subTopics.map(t => {
+                        const m = masteryMap[t.name] || { mastery: 0, unlocked: false, recommended: false };
+                        let status = 'LOCKED';
+                        if (m.unlocked) {
+                            if (m.mastery >= 70) status = 'MASTERED';
+                            else if (m.mastery <= 5) status = 'AVAILABLE';
+                            else status = 'IN_PROGRESS';
+                        }
+                        return {
+                            name: t.name,
+                            mastery: m.mastery,
+                            unlocked: m.unlocked,
+                            recommended: m.recommended,
+                            status
+                        };
+                    })
+                };
+            });
+        } else {
+            // Fallback to hardcoded structure
+            curriculum = CURRICULUM_STRUCTURE.map(module => ({
+                ...module,
+                topics: module.topics.map(topicName => {
+                    const m = masteryMap[topicName] || { mastery: 0, unlocked: false, recommended: false };
+                    let status = 'LOCKED';
+                    if (m.unlocked) {
+                        if (m.mastery >= 70) status = 'MASTERED';
+                        else if (m.mastery <= 5) status = 'AVAILABLE';
+                        else status = 'IN_PROGRESS';
+                    }
+                    return {
+                        name: topicName,
+                        mastery: m.mastery,
+                        unlocked: m.unlocked,
+                        recommended: m.recommended,
+                        status
+                    };
+                })
+            }));
+        }
 
         res.json(curriculum);
     } catch (err) {

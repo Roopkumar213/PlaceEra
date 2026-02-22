@@ -55,45 +55,41 @@ router.post('/submit', authMiddleware, async (req, res) => {
             await progress.save();
         }
 
-        // 3. ATOMIC INTELLIGENT MASTERY UPDATE (OCC)
-        let retryCount = 0;
-        let updateSuccess = false;
+        // 3. ATOMIC INTELLIGENT MASTERY UPDATE (TRANSACTIONAL)
+        const mongoose = require('mongoose');
+        const session = await mongoose.startSession();
+        const { evaluateAndUpdateUnlocks } = require('../services/masteryService');
 
-        // Variables for final response
         let currentMastery = 0;
         let newMastery = 0;
         let actualDelta = 0;
         let change = 0;
         let newTrend = 'unknown';
 
-        const MAX_RETRIES = 3;
-
-        while (!updateSuccess && retryCount < MAX_RETRIES) {
-            try {
+        try {
+            await session.withTransaction(async () => {
                 // Fetch current state
-                let topicMastery = await TopicMastery.findOne({ userId, topic: lesson.topic });
+                let topicMastery = await TopicMastery.findOne({ userId, topic: lesson.topic }).session(session);
 
-                // Init if missing
+                // Init if missing (Race condition safe with unique index + upsert)
                 if (!topicMastery) {
-                    try {
-                        topicMastery = new TopicMastery({
-                            userId,
-                            topic: lesson.topic,
-                            subject: lesson.subject,
-                            mastery: 0
-                        });
-                        await topicMastery.save();
-                    } catch (e) {
-                        // Race condition on insert? Fetch again.
-                        topicMastery = await TopicMastery.findOne({ userId, topic: lesson.topic });
-                    }
+                    topicMastery = await TopicMastery.findOneAndUpdate(
+                        { userId, topic: lesson.topic },
+                        {
+                            $setOnInsert: {
+                                subject: lesson.subject,
+                                mastery: 0,
+                                unlocked: true
+                            }
+                        },
+                        { upsert: true, new: true, session }
+                    );
                 }
 
                 // --- CALCULATION ENGINE ---
                 currentMastery = topicMastery.mastery;
                 change = 0;
 
-                // A. Base Weighting
                 if (percentage >= 80) {
                     change = (100 - currentMastery) * 0.25;
                 } else if (percentage >= 60) {
@@ -104,15 +100,12 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     change = -(currentMastery * 0.10);
                 }
 
-                // B. Diminishing Returns
                 if (currentMastery > 85 && change > 0) change = change * 0.5;
 
-                // C. Recency Penalty
                 const lastPracticed = topicMastery.lastAttemptAt ? new Date(topicMastery.lastAttemptAt) : new Date(0);
                 const hoursSince = (Date.now() - lastPracticed.getTime()) / (1000 * 60 * 60);
                 if (hoursSince < 72 && change > 0) change = change * 0.7;
 
-                // Guards
                 let finalChange = change;
                 if (Math.abs(finalChange) > 40) finalChange = Math.round(finalChange * 0.7);
 
@@ -121,13 +114,11 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 newMastery = Math.max(MIN_MASTERY_FLOOR, Math.min(100, newMastery));
                 actualDelta = newMastery - currentMastery;
 
-                // Trend & Stats Ops
                 let incCorrect = (percentage >= 70) ? 1 : 0;
                 let incFailure = (percentage < 70) ? 1 : 0;
                 let resetStreak = (percentage < 70);
                 let resetFailure = (percentage >= 70);
 
-                // Determine Trend
                 newTrend = 'stable';
                 const scores = [...topicMastery.lastScores, percentage].slice(-5);
                 if (scores.length >= 2) {
@@ -137,7 +128,6 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     else if (recent < previous - 5) newTrend = 'declining';
                 }
 
-                // Prepare Update Query
                 const updateQuery = {
                     $set: {
                         mastery: newMastery,
@@ -157,95 +147,103 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     }
                 };
 
-                // Conditional Resets - We use $set if resetting, else $inc
                 if (resetStreak) updateQuery.$set.successStreak = 0;
-                else updateQuery.$inc = { ...updateQuery.$inc, successStreak: 1 };
+                else updateQuery.$inc.successStreak = 1;
 
                 if (resetFailure) updateQuery.$set.failureCount = 0;
-                else updateQuery.$inc = { ...updateQuery.$inc, failureCount: 1 };
+                else updateQuery.$inc.failureCount = 1;
 
-
-                // EXECUTE UPDATE with Version Check
-                const result = await TopicMastery.findOneAndUpdate(
-                    { _id: topicMastery._id, __v: topicMastery.__v },
+                const updatedMastery = await TopicMastery.findByIdAndUpdate(
+                    topicMastery._id,
                     updateQuery,
-                    { new: true }
+                    { new: true, session }
                 );
 
-                if (result) {
-                    updateSuccess = true;
-                    // Async Log will happen after this block
+                // 4. Update Subject Mastery (Fair readiness calculation)
+                // Filter: Only include topics actually attempted to avoid dragging down avg with new unlocks
+                const subjectTopics = await TopicMastery.find({
+                    userId,
+                    subject: lesson.subject,
+                    lastAttemptAt: { $ne: null }
+                }).session(session);
 
-                    // 4. Update Subject Mastery (Aggregation-like)
-                    const subjectTopics = await TopicMastery.find({ userId, subject: lesson.subject });
-                    const totalTopics = subjectTopics.length;
-                    const sumMastery = subjectTopics.reduce((acc, t) => acc + t.mastery, 0);
-                    const avgMastery = totalTopics > 0 ? sumMastery / totalTopics : 0;
-                    const masteredCount = subjectTopics.filter(t => t.mastery > 90).length;
+                const totalAttempted = subjectTopics.length;
+                const sumMastery = subjectTopics.reduce((acc, t) => acc + t.mastery, 0);
+                const avgMastery = totalAttempted > 0 ? sumMastery / totalAttempted : 0;
+                const masteredCount = subjectTopics.filter(t => t.mastery > 90).length;
 
-                    await SubjectMastery.findOneAndUpdate(
-                        { userId, subject: lesson.subject },
+                await SubjectMastery.findOneAndUpdate(
+                    { userId, subject: lesson.subject },
+                    {
+                        averageMastery: avgMastery,
+                        totalTopics: totalAttempted,
+                        masteredTopics: masteredCount,
+                        lastUpdated: Date.now()
+                    },
+                    { upsert: true, session }
+                );
+
+                // 5. Revision Queue Logic
+                if (percentage < 60) {
+                    const priorityScore = (100 - newMastery) + (updatedMastery.failureCount * 5);
+                    const daysToAdd = Math.min(updatedMastery.failureCount, 3);
+                    const scheduledDate = new Date();
+                    scheduledDate.setDate(scheduledDate.getDate() + daysToAdd);
+
+                    await RevisionQueue.findOneAndUpdate(
+                        { userId, topic: lesson.topic },
                         {
-                            averageMastery: avgMastery,
-                            totalTopics: totalTopics,
-                            masteredTopics: masteredCount,
-                            lastUpdated: Date.now()
+                            subject: lesson.subject,
+                            priorityScore,
+                            scheduledFor: scheduledDate,
+                            resolved: false,
+                            reason: 'failure_recovery'
                         },
-                        { upsert: true }
+                        { upsert: true, session }
                     );
-
-                    // 5. Revision Queue Logic
-                    if (percentage < 60) {
-                        const priorityScore = (100 - newMastery) + (result.failureCount * 5);
-                        const daysToAdd = Math.min(result.failureCount, 3);
-                        const scheduledDate = new Date();
-                        scheduledDate.setDate(scheduledDate.getDate() + daysToAdd);
-
-                        await RevisionQueue.findOneAndUpdate(
-                            { userId, topic: lesson.topic },
-                            {
-                                subject: lesson.subject,
-                                priorityScore,
-                                scheduledFor: scheduledDate,
-                                resolved: false,
-                                reason: 'failure_recovery'
-                            },
-                            { upsert: true }
-                        );
-                    } else {
-                        await RevisionQueue.findOneAndUpdate(
-                            { userId, topic: lesson.topic, resolved: false },
-                            { resolved: true }
-                        );
-                    }
-
-                    // LOG OBSERVABILITY EVENT (Async, non-blocking)
-                    const LearningEventLog = require('../models/LearningEventLog');
-                    LearningEventLog.create({
-                        userId,
-                        topicId: lesson.topic,
-                        subject: lesson.subject,
-                        eventType: 'QUIZ_SUBMIT',
-                        previousMastery: currentMastery,
-                        newMastery: newMastery,
-                        delta: actualDelta,
-                        trendDirection: newTrend,
-                        meta: { quizId, score: percentage, submissionId }
-                    }).catch(err => console.error('Observability Log Failed:', err.message));
-
                 } else {
-                    retryCount++;
-                    await new Promise(res => setTimeout(res, 50 * retryCount));
+                    await RevisionQueue.findOneAndUpdate(
+                        { userId, topic: lesson.topic, resolved: false },
+                        { resolved: true },
+                        { session }
+                    );
                 }
 
-            } catch (err) {
-                console.error('Update Error:', err);
-                break;
-            }
-        }
+                // --- DAY 2: DYNAMIC UNLOCK EVALUATION ---
+                // Performance Safety Guard:
+                // Skip if both current and previous mastery are >= 70 (no unlock likely triggered)
+                // EXCEPT if this is a first-time pass crossing the threshold.
+                const crossedThreshold = (currentMastery < 70 && newMastery >= 70);
+                const significantDegrade = (currentMastery >= 70 && newMastery < 70);
 
-        if (!updateSuccess) {
-            return res.status(409).json({ message: 'Conflict: Please retry submission.' });
+                if (crossedThreshold || significantDegrade) {
+                    await evaluateAndUpdateUnlocks(userId, session);
+                }
+
+                // LOG OBSERVABILITY EVENT
+                const LearningEventLog = require('../models/LearningEventLog');
+                await LearningEventLog.create([{
+                    userId,
+                    topicId: lesson.topic,
+                    subject: lesson.subject,
+                    eventType: 'QUIZ_SUBMIT',
+                    previousMastery: currentMastery,
+                    newMastery: newMastery,
+                    delta: actualDelta,
+                    trendDirection: newTrend,
+                    meta: { quizId, score: percentage, submissionId }
+                }], { session });
+
+            }, {
+                readPreference: 'primary',
+                readConcern: { level: 'snapshot' },
+                writeConcern: { w: 'majority' }
+            });
+        } catch (err) {
+            console.error('Quiz Submission Failed:', err);
+            return res.status(500).json({ message: 'Transaction Aborted: ' + err.message });
+        } finally {
+            await session.endSession();
         }
 
         // Result Construction

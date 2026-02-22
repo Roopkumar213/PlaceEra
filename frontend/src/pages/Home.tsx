@@ -13,8 +13,10 @@ import { HomeReadinessWidget } from '../components/features/progress/HomeReadine
 interface DashboardStats {
     streak: number;
     totalLessons: number;
-    weakTopics: { topic: string; proficiency: number }[];
+    weakTopics: { topic: string; mastery: number }[];
     recentActivity: any[];
+    isFirstSession: boolean;
+    firstRecommendedTopic: { topic: string; subject: string; mastery: number } | null;
 }
 
 const Home: React.FC = () => {
@@ -45,7 +47,7 @@ const Home: React.FC = () => {
     return (
         <PageContainer>
             {/* Hero Section */}
-            <section className="flex flex-col items-start gap-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
+            <section className="flex flex-col items-start gap-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-24">
                 <Badge variant="secondary" className="mb-2">
                     System v2.1 Online
                 </Badge>
@@ -73,8 +75,73 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+            {/* Day 0 Experience: Onboarding Required */}
+            {!isLoading && user && !user.onboardingComplete && (
+                <Card className="border-yellow-500/50 bg-yellow-500/5 mb-8 overflow-hidden relative">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <BookOpen className="text-yellow-600" />
+                            Complete Your Setup
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                                <p className="text-muted-foreground">
+                                    To provide a personalized learning experience, we need to know your preferences and timezone.
+                                </p>
+                            </div>
+                            <Link to="/settings">
+                                <Button size="lg" className="bg-yellow-600 hover:bg-yellow-700">
+                                    Finish Onboarding
+                                    <ArrowRight className="ml-2" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Day 1 Experience: Start Here Card */}
+            {!isLoading && user?.onboardingComplete && stats.isFirstSession && (
+                <Card className="border-primary/50 bg-primary/5 mb-8 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Zap size={120} />
+                    </div>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Target className="text-primary" />
+                            Start Your Journey
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                                <p className="text-muted-foreground">
+                                    We've analyzed your onboarding and unlocked the best starting points for you.
+                                </p>
+                                {stats.firstRecommendedTopic && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <Badge variant="outline" className="text-primary border-primary/30">
+                                            First Up: {stats.firstRecommendedTopic.topic}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">in {stats.firstRecommendedTopic.subject}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <Link to={stats.firstRecommendedTopic ? `/today` : `/curriculum`}>
+                                <Button size="lg" className="group">
+                                    Begin First Quiz
+                                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Quick Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-8">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Daily Streak</CardTitle>
@@ -97,7 +164,7 @@ const Home: React.FC = () => {
                     <CardContent>
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                             <>
-                                <div className="text-2xl font-bold">{stats.weakTopics.filter(t => t.proficiency > 80).length}</div>
+                                <div className="text-2xl font-bold">{stats.weakTopics.filter(t => t.mastery > 80).length}</div>
                                 <p className="text-xs text-muted-foreground">High proficiency topics</p>
                             </>
                         )}

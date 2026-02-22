@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
   emailEnabled: { type: Boolean, default: true },
   pushEnabled: { type: Boolean, default: true },
   streak: { type: Number, default: 0 },
+  onboardingComplete: { type: Boolean, default: false },
   lastNotificationDate: { type: Date },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },

@@ -41,8 +41,13 @@ mongoose.connect(MONGO_URI, {
     .catch(err => console.log(err));
 
 // Jobs
-const startDecayJob = require('./jobs/masteryDecayJob');
-startDecayJob();
+if (process.env.REDIS_ENABLED !== 'false') {
+    const startDecayJob = require('./jobs/masteryDecayJob');
+    startDecayJob();
+    console.log('📡 Queue System: Enabled');
+} else {
+    console.log('📡 Queue System: Disabled (Local Mode)');
+}
 
 const PORT = process.env.PORT || 5000;
 
