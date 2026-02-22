@@ -16,6 +16,6 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
-UserSchema.index({ email: 1 });
+// Email index is automatically created by unique: true
 
 module.exports = mongoose.model('User', UserSchema);

@@ -2,6 +2,7 @@ const SubjectMastery = require('../models/SubjectMastery');
 const TopicMastery = require('../models/TopicMastery');
 const Topic = require('../models/Topic');
 const RevisionQueue = require('../models/RevisionQueue');
+const { sortSubjectsByWeakness } = require('../utils/engineHelpers');
 
 /**
  * Intelligent Recommendation Engine using Weakest Domain Philosophy (Day 3).
@@ -10,106 +11,121 @@ const RevisionQueue = require('../models/RevisionQueue');
  */
 const getWeakestDomainRecommendation = async (userId) => {
     try {
-        // 1. Identify Weakest Subject
-        // Fetch SubjectMastery records for the user
-        const subjectMasteries = await SubjectMastery.find({ userId })
-            .sort({
-                averageMastery: 1,
-                totalAttempts: 1,
-                createdAt: 1
-            });
-
-        if (!subjectMasteries || subjectMasteries.length === 0) {
+        // 1. Fetch SubjectMastery records
+        const rawSubjectMasteries = await SubjectMastery.find({ userId });
+        if (!rawSubjectMasteries || rawSubjectMasteries.length === 0) {
             return null;
         }
 
-        const weakestSubject = subjectMasteries[0];
-        const subjectName = weakestSubject.subject;
+        // Use pure helper for deterministic sorting & normalization
+        const sortedSubjects = sortSubjectsByWeakness(rawSubjectMasteries);
 
-        // 2. Fetch all data for the weakest subject in parallel to avoid N+1
-        const [allTopicsInSubject, topicMasteries, revisionEntries] = await Promise.all([
-            Topic.find({ subject: subjectName }).sort({ orderIndex: 1 }),
-            TopicMastery.find({ userId, subject: subjectName }),
-            RevisionQueue.find({ userId, subject: subjectName, resolved: false })
-        ]);
+        // 2. Iterate subjects to find the best recommendation (Handles Case B Fallback)
+        for (const weakestSubject of sortedSubjects) {
+            const subjectName = weakestSubject.subject;
 
-        const masteryMap = topicMasteries.reduce((acc, m) => {
-            acc[m.topic] = m;
-            return acc;
-        }, {});
+            // 2. Fetch all data for the weakest subject in parallel to avoid N+1
+            const [allTopicsInSubject, topicMasteries, revisionEntries] = await Promise.all([
+                Topic.find({ subject: subjectName }).sort({ orderIndex: 1 }),
+                TopicMastery.find({ userId, subject: subjectName }),
+                RevisionQueue.find({ userId, subject: subjectName, resolved: false }).sort({ priorityScore: -1 })
+            ]);
 
-        const revisionSet = new Set(revisionEntries.map(r => r.topic));
+            if (topicMasteries.length === 0) continue;
 
-        // 3. Evaluation logic (Step D)
-        // Priority 1: In-progress topics (5 < mastery < 70)
-        const inProgress = topicMasteries
-            .filter(m => m.unlocked && m.mastery > 5 && m.mastery < 70)
-            .sort((a, b) => a.mastery - b.mastery);
+            const masteryMap = topicMasteries.reduce((acc, m) => {
+                acc[m.topic] = m;
+                return acc;
+            }, {});
 
-        if (inProgress.length > 0) {
-            return {
-                subjectId: subjectName,
-                topicId: inProgress[0].topic,
-                subjectReadiness: weakestSubject.averageMastery,
-                topicMastery: inProgress[0].mastery,
-                status: 'IN_PROGRESS',
-                reason: 'Weakest domain focus: Improving current progress'
-            };
+            const unlockedMasteries = topicMasteries.filter(m => m.unlocked);
+            if (unlockedMasteries.length === 0) continue;
+
+            // 3. Evaluation logic (REFINED PRIORITIES)
+
+            // Priority 1: In-progress topics (5 < mastery < 70)
+            const inProgress = unlockedMasteries
+                .filter(m => m.mastery > 5 && m.mastery < 70)
+                .sort((a, b) => a.mastery - b.mastery);
+
+            if (inProgress.length > 0) {
+                return {
+                    subjectId: subjectName,
+                    topicId: inProgress[0].topic,
+                    subjectReadiness: weakestSubject.averageMastery ?? 0,
+                    topicMastery: inProgress[0].mastery,
+                    status: 'IN_PROGRESS',
+                    reason: 'Weakest domain focus: Improving current progress'
+                };
+            }
+
+            // Priority 2: REVISION (Critical failure recovery)
+            // Reordered: Revision now outranks AVAILABLE
+            if (revisionEntries.length > 0) {
+                const topRevision = revisionEntries[0];
+                const m = masteryMap[topRevision.topic];
+                if (m && m.unlocked) {
+                    return {
+                        subjectId: subjectName,
+                        topicId: topRevision.topic,
+                        subjectReadiness: weakestSubject.averageMastery ?? 0,
+                        topicMastery: m.mastery,
+                        status: 'REVISION',
+                        reason: 'Weakest domain focus: Critical revision needed'
+                    };
+                }
+            }
+
+            // Priority 3: AVAILABLE (New topics, mastery <= 5)
+            const newTopics = unlockedMasteries
+                .filter(m => m.mastery <= 5)
+                .sort((a, b) => {
+                    const topicA = allTopicsInSubject.find(t => t.name === a.topic);
+                    const topicB = allTopicsInSubject.find(t => t.name === b.topic);
+                    return (topicA?.orderIndex || 0) - (topicB?.orderIndex || 0);
+                });
+
+            if (newTopics.length > 0) {
+                return {
+                    subjectId: subjectName,
+                    topicId: newTopics[0].topic,
+                    subjectReadiness: weakestSubject.averageMastery ?? 0,
+                    topicMastery: newTopics[0].mastery,
+                    status: 'AVAILABLE',
+                    reason: 'Weakest domain focus: Start new topic'
+                };
+            }
+
+            // Priority 4: First unlocked topic (Fallback)
+            const firstUnlocked = unlockedMasteries
+                .sort((a, b) => {
+                    const topicA = allTopicsInSubject.find(t => t.name === a.topic);
+                    const topicB = allTopicsInSubject.find(t => t.name === b.topic);
+                    return (topicA?.orderIndex || 0) - (topicB?.orderIndex || 0);
+                })[0];
+
+            if (firstUnlocked) {
+                return {
+                    subjectId: subjectName,
+                    topicId: firstUnlocked.topic,
+                    subjectReadiness: weakestSubject.averageMastery ?? 0,
+                    topicMastery: firstUnlocked.mastery,
+                    status: 'PRACTICE',
+                    reason: 'Weakest domain focus: Regular practice'
+                };
+            }
         }
 
-        // Priority 2: New topics (mastery <= 5)
-        const newTopics = topicMasteries
-            .filter(m => m.unlocked && m.mastery <= 5)
-            .sort((a, b) => {
-                // Find orderIndex from Topic model for sorting
-                const topicA = allTopicsInSubject.find(t => t.name === a.topic);
-                const topicB = allTopicsInSubject.find(t => t.name === b.topic);
-                return (topicA?.orderIndex || 0) - (topicB?.orderIndex || 0);
-            });
-
-        if (newTopics.length > 0) {
+        // Global Fallback (Case A: All Mastered)
+        const globalBest = await TopicMastery.findOne({ userId, unlocked: true }).sort({ mastery: 1 });
+        if (globalBest) {
             return {
-                subjectId: subjectName,
-                topicId: newTopics[0].topic,
-                subjectReadiness: weakestSubject.averageMastery,
-                topicMastery: newTopics[0].mastery,
-                status: 'AVAILABLE',
-                reason: 'Weakest domain focus: Start new topic'
-            };
-        }
-
-        // Priority 3: Revision queue
-        if (revisionEntries.length > 0) {
-            // Sort revision entries by priority score DESC
-            const topRevision = revisionEntries.sort((a, b) => b.priorityScore - a.priorityScore)[0];
-            const m = masteryMap[topRevision.topic] || { mastery: 0 };
-            return {
-                subjectId: subjectName,
-                topicId: topRevision.topic,
-                subjectReadiness: weakestSubject.averageMastery,
-                topicMastery: m.mastery,
-                status: 'REVISION',
-                reason: 'Weakest domain focus: Critical revision needed'
-            };
-        }
-
-        // Priority 4: First unlocked topic (Fallback)
-        const firstUnlocked = topicMasteries
-            .filter(m => m.unlocked)
-            .sort((a, b) => {
-                const topicA = allTopicsInSubject.find(t => t.name === a.topic);
-                const topicB = allTopicsInSubject.find(t => t.name === b.topic);
-                return (topicA?.orderIndex || 0) - (topicB?.orderIndex || 0);
-            })[0];
-
-        if (firstUnlocked) {
-            return {
-                subjectId: subjectName,
-                topicId: firstUnlocked.topic,
-                subjectReadiness: weakestSubject.averageMastery,
-                topicMastery: firstUnlocked.mastery,
-                status: 'PRACTICE',
-                reason: 'Weakest domain focus: Regular practice'
+                subjectId: globalBest.subject,
+                topicId: globalBest.topic,
+                subjectReadiness: 100,
+                topicMastery: globalBest.mastery,
+                status: 'MAINTENANCE',
+                reason: 'All domains strong: System maintenance'
             };
         }
 

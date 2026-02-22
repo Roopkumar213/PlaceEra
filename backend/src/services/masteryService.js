@@ -19,17 +19,10 @@ const initializeUserMasteryIfEmpty = async (userId) => {
         return;
     }
 
-    const session = await mongoose.startSession();
-
-    // 2. Enterprise Configuration: Majority Write Concern + Snapshot Read Concern
-    const transactionOptions = {
-        readConcern: { level: 'snapshot' },
-        writeConcern: { w: 'majority' },
-        readPreference: 'primary'
-    };
+    const { withTransaction } = require('../utils/dbUtils');
 
     try {
-        await session.withTransaction(async () => {
+        await withTransaction(async (session) => {
             // Idempotency: Count existing mastery rows
             const existingCount = await TopicMastery.countDocuments({ userId }).session(session);
             if (existingCount > 0) {
@@ -52,7 +45,6 @@ const initializeUserMasteryIfEmpty = async (userId) => {
                 for (const mod of CURRICULUM_STRUCTURE) {
                     if (!mod || !mod.topics || mod.topics.length === 0) continue;
 
-                    // slice(0, 2) is safe for empty arrays or single-item arrays
                     const firstTwo = mod.topics.slice(0, 2);
                     for (const topicName of firstTwo) {
                         await TopicMastery.findOneAndUpdate(
@@ -100,13 +92,11 @@ const initializeUserMasteryIfEmpty = async (userId) => {
                     }
                 }
             }
-        }, transactionOptions);
+        });
         console.log(`[MasteryInit] Successfully initialized mastery for user: ${userId}`);
     } catch (err) {
         console.error(`[MasteryInit] Error initializing mastery for user ${userId}:`, err);
         throw err;
-    } finally {
-        await session.endSession();
     }
 };
 
@@ -165,55 +155,47 @@ const evaluateAndUpdateUnlocks = async (userId, session) => {
         const unlockLogEntries = [];
         const LearningEventLog = require('../models/LearningEventLog');
 
+        const { evaluateUnlockState } = require('../utils/engineHelpers');
+
         // 4. Evaluate sequence per subject
         for (const subjectName in topicsBySubject) {
             const topics = topicsBySubject[subjectName];
-            let previousTopicMastered = true; // Seed true for the first topic
+            const updates = evaluateUnlockState(topics, masteryMap);
 
-            for (let i = 0; i < topics.length; i++) {
-                const topic = topics[i];
-                const currentMasteryRecord = masteryMap[topic.name];
+            for (const update of updates) {
+                const topicName = update.topic;
+                const subject = update.subject;
 
-                // Rule: If i == 0, always unlocked. Else, unlocked if previous >= 70.
-                const shouldBeUnlocked = (i === 0) || previousTopicMastered;
-
-                if (currentMasteryRecord) {
-                    // Refinement: MONOTONIC UNLOCKS
-                    // If already unlocked, stay unlocked. Never re-lock.
-                    if (shouldBeUnlocked && !currentMasteryRecord.unlocked) {
-                        bulkOps.push({
-                            updateOne: {
-                                filter: { _id: currentMasteryRecord._id },
-                                update: { $set: { unlocked: true } }
-                            }
-                        });
-
-                        unlockLogEntries.push({
-                            userId,
-                            topicId: topic.name,
-                            subject: topic.subject,
-                            eventType: 'TOPIC_UNLOCKED',
-                            previousMastery: currentMasteryRecord.mastery,
-                            newMastery: currentMasteryRecord.mastery,
-                            delta: 0,
-                            meta: { reason: 'linear_progression' }
-                        });
-                        console.log(`[MasteryUnlock] User ${userId} unlocked topic: ${topic.name}`);
-                    }
-                    // Update flow state for the NEXT topic in the sequence
-                    previousTopicMastered = currentMasteryRecord.mastery >= 70;
-                } else if (shouldBeUnlocked) {
-                    // New record for newly unlocked topic
-                    // Precision: Absolute control over initialized fields
+                if (update.type === 'UNLOCK') {
+                    const currentMasteryRecord = masteryMap[topicName];
                     bulkOps.push({
                         updateOne: {
-                            filter: { userId, topic: topic.name },
+                            filter: { _id: currentMasteryRecord._id },
+                            update: { $set: { unlocked: true } }
+                        }
+                    });
+
+                    unlockLogEntries.push({
+                        userId,
+                        topicId: topicName,
+                        subject: subject,
+                        eventType: 'TOPIC_UNLOCKED',
+                        previousMastery: currentMasteryRecord.mastery,
+                        newMastery: currentMasteryRecord.mastery,
+                        delta: 0,
+                        meta: { reason: 'linear_progression' }
+                    });
+                    console.log(`[MasteryUnlock] User ${userId} unlocked topic: ${topicName}`);
+                } else if (update.type === 'INITIALIZE') {
+                    bulkOps.push({
+                        updateOne: {
+                            filter: { userId, topic: topicName },
                             update: {
                                 $setOnInsert: {
-                                    subject: topic.subject,
-                                    mastery: 5, // Start with "Available" base
+                                    subject: subject,
+                                    mastery: 5,
                                     unlocked: true,
-                                    recommended: false, // Will be set by recommendation engine or rotation
+                                    recommended: false,
                                     lastAttemptAt: null,
                                     decayLocked: false,
                                     createdAt: new Date()
@@ -225,30 +207,26 @@ const evaluateAndUpdateUnlocks = async (userId, session) => {
 
                     unlockLogEntries.push({
                         userId,
-                        topicId: topic.name,
-                        subject: topic.subject,
+                        topicId: topicName,
+                        subject: subject,
                         eventType: 'TOPIC_UNLOCKED',
                         previousMastery: 0,
                         newMastery: 5,
                         delta: 5,
                         meta: { reason: 'linear_progression_initial' }
                     });
-                    console.log(`[MasteryUnlock] User ${userId} auto-initialized & unlocked topic: ${topic.name}`);
-
-                    previousTopicMastered = false; // Mastery is 5, not >= 70
-                } else {
-                    // Locked and no record exists - nothing to do
-                    previousTopicMastered = false;
+                    console.log(`[MasteryUnlock] User ${userId} auto-initialized & unlocked topic: ${topicName}`);
                 }
             }
         }
 
         // 5. Execute in bulk
+        const options = session ? { session } : {};
         if (bulkOps.length > 0) {
-            await TopicMastery.bulkWrite(bulkOps, { session });
+            await TopicMastery.bulkWrite(bulkOps, options);
         }
         if (unlockLogEntries.length > 0) {
-            await LearningEventLog.insertMany(unlockLogEntries, { session });
+            await LearningEventLog.insertMany(unlockLogEntries, options);
         }
 
     } catch (err) {

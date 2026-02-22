@@ -18,7 +18,7 @@ const learningEventLogSchema = new mongoose.Schema({
     },
     eventType: {
         type: String,
-        enum: ['QUIZ_SUBMIT', 'DECAY_APPLIED', 'REVISION_TRIGGERED', 'ROTATION_SELECTED'],
+        enum: ['QUIZ_SUBMIT', 'DECAY_APPLIED', 'REVISION_TRIGGERED', 'ROTATION_SELECTED', 'TOPIC_UNLOCKED', 'MASTERY_INITIALIZED'],
         required: true
     },
     previousMastery: {
@@ -43,8 +43,8 @@ const learningEventLogSchema = new mongoose.Schema({
     },
     timestamp: {
         type: Date,
-        default: Date.now,
-        index: true
+        default: Date.now
+        // index: true // Removed duplicate index, handled by TTL index below
     }
 }, {
     timestamps: true

@@ -1,52 +1,22 @@
-require('dotenv').config(); // Load from backend/.env first
-const path = require('path');
-// Also try to load from root if not found (optional, but good for monorepos)
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const express = require('express');
+const app = require('./app');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-
-const authRoutes = require('./routes/auth');
-
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
-
-// Routes
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api', require('./routes/daily'));
-app.use('/api/progress', require('./routes/progress'));
-app.use('/api/curriculum', require('./routes/curriculum'));
-app.use('/api/quiz', require('./routes/quiz'));
-app.use('/api/system', require('./routes/system'));
-app.use('/api/recommendation', require('./routes/recommendation'));
 
 // Database Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/placeera';
 
 mongoose.connect(MONGO_URI, {
     tls: true,
-    tlsAllowInvalidCertificates: true // Sometimes needed for specific network/Atlas configurations
+    tlsAllowInvalidCertificates: true
 })
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
 // Jobs
-if (process.env.REDIS_ENABLED !== 'false') {
+if (process.env.REDIS_ENABLED !== 'false' && process.env.NODE_ENV !== 'test') {
     const startDecayJob = require('./jobs/masteryDecayJob');
     startDecayJob();
     console.log('📡 Queue System: Enabled');
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
     console.log('📡 Queue System: Disabled (Local Mode)');
 }
 

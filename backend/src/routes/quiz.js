@@ -56,8 +56,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
         }
 
         // 3. ATOMIC INTELLIGENT MASTERY UPDATE (TRANSACTIONAL)
-        const mongoose = require('mongoose');
-        const session = await mongoose.startSession();
+        const { withTransaction } = require('../utils/dbUtils');
         const { evaluateAndUpdateUnlocks } = require('../services/masteryService');
 
         let currentMastery = 0;
@@ -67,7 +66,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
         let newTrend = 'unknown';
 
         try {
-            await session.withTransaction(async () => {
+            await withTransaction(async (session) => {
                 // Fetch current state
                 let topicMastery = await TopicMastery.findOne({ userId, topic: lesson.topic }).session(session);
 
@@ -82,7 +81,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
                                 unlocked: true
                             }
                         },
-                        { upsert: true, new: true, session }
+                        { upsert: true, returnDocument: 'after', session }
                     );
                 }
 
@@ -156,11 +155,10 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 const updatedMastery = await TopicMastery.findByIdAndUpdate(
                     topicMastery._id,
                     updateQuery,
-                    { new: true, session }
+                    { returnDocument: 'after', session }
                 );
 
-                // 4. Update Subject Mastery (Fair readiness calculation)
-                // Filter: Only include topics actually attempted to avoid dragging down avg with new unlocks
+                // 4. Update Subject Mastery
                 const subjectTopics = await TopicMastery.find({
                     userId,
                     subject: lesson.subject,
@@ -212,10 +210,6 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     );
                 }
 
-                // --- DAY 2: DYNAMIC UNLOCK EVALUATION ---
-                // Performance Safety Guard:
-                // Skip if both current and previous mastery are >= 70 (no unlock likely triggered)
-                // EXCEPT if this is a first-time pass crossing the threshold.
                 const crossedThreshold = (currentMastery < 70 && newMastery >= 70);
                 const significantDegrade = (currentMastery >= 70 && newMastery < 70);
 
@@ -235,20 +229,13 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     delta: actualDelta,
                     trendDirection: newTrend,
                     meta: { quizId, score: percentage, submissionId }
-                }], { session });
+                }], session ? { session } : {});
 
-            }, {
-                readPreference: 'primary',
-                readConcern: { level: 'snapshot' },
-                writeConcern: { w: 'majority' }
             });
         } catch (err) {
             console.error('Quiz Submission Failed:', err);
-            return res.status(500).json({ message: 'Transaction Aborted: ' + err.message });
-        } finally {
-            await session.endSession();
+            return res.status(500).json({ message: 'Operation Failed: ' + err.message });
         }
-
         // Result Construction
         const finalResult = {
             message: 'Quiz submitted successfully',
