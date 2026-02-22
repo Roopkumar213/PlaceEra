@@ -10,6 +10,13 @@ const UserSchema = new mongoose.Schema({
   emailEnabled: { type: Boolean, default: true },
   pushEnabled: { type: Boolean, default: true },
   streak: { type: Number, default: 0 },
+  lastActiveDate: { type: Date, default: null },
+  behavioralState: {
+    type: String,
+    enum: ['OPTIMAL', 'PLATEAU', 'OVERLOAD', 'COLD_START'],
+    default: 'OPTIMAL'
+  },
+  behavioralMeta: { type: mongoose.Schema.Types.Mixed, default: {} },
   onboardingComplete: { type: Boolean, default: false },
   lastNotificationDate: { type: Date },
   resetPasswordToken: { type: String },

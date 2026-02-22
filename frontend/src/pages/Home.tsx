@@ -11,6 +11,7 @@ import axios from 'axios';
 import { HomeReadinessWidget } from '../components/features/progress/HomeReadinessWidget';
 import { RevisionFocusPanel } from '../components/features/progress/RevisionFocusPanel';
 import { SubjectHeatmapWidget } from '../components/features/progress/SubjectHeatmapWidget';
+import { BehavioralStatusWidget } from '../components/features/progress/BehavioralStatusWidget';
 
 interface DashboardStats {
     streak: number;
@@ -79,6 +80,10 @@ const Home: React.FC = () => {
                 </p>
 
                 <HomeReadinessWidget />
+
+                <div className="w-full max-w-2xl">
+                    <BehavioralStatusWidget />
+                </div>
 
                 <div className="flex gap-4 mt-2 flex-wrap">
                     <Link to="/today">
