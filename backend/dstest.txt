@@ -1,0 +1,444 @@
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (5) from ..\.env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.error
+    LLM Service Error: Request failed with status code 401
+
+    [0m [90m 66 |[39m
+     [90m 67 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 68 |[39m         console[33m.[39merror([32m'LLM Service Error:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m                 [31m[1m^[22m[39m
+     [90m 69 |[39m         [36mthrow[39m error[33m;[39m
+     [90m 70 |[39m     }
+     [90m 71 |[39m }[0m
+
+      at error (src/services/llmService.js:68:17)
+      at src/routes/daily.js:148:26
+
+  console.error
+    Failed to generate session content: AxiosError: Request failed with status code 401
+        at settle (C:\Users\21236\OneDrive\Desktop\placeEra\backend\node_modules\axios\lib\core\settle.js:19:12)
+        at IncomingMessage.handleStreamEnd (C:\Users\21236\OneDrive\Desktop\placeEra\backend\node_modules\axios\lib\adapters\http.js:798:11)
+        at IncomingMessage.emit (node:events:531:35)
+        at endReadableNT (node:internal/streams/readable:1698:12)
+        at processTicksAndRejections (node:internal/process/task_queues:90:21)
+        at Axios.request (C:\Users\21236\OneDrive\Desktop\placeEra\backend\node_modules\axios\lib\core\Axios.js:46:41)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at generateLesson (C:\Users\21236\OneDrive\Desktop\placeEra\backend\src\services\llmService.js:38:26)
+        at C:\Users\21236\OneDrive\Desktop\placeEra\backend\src\routes\daily.js:148:26 {
+      isAxiosError: true,
+      code: 'ERR_BAD_REQUEST',
+      config: {
+        transitional: {
+          silentJSONParsing: true,
+          forcedJSONParsing: true,
+          clarifyTimeoutError: false,
+          legacyInterceptorReqResOrdering: true
+        },
+        adapter: [ 'xhr', 'http', 'fetch' ],
+        transformRequest: [ [Function: transformRequest] ],
+        transformResponse: [ [Function: transformResponse] ],
+        timeout: 0,
+        xsrfCookieName: 'XSRF-TOKEN',
+        xsrfHeaderName: 'X-XSRF-TOKEN',
+        maxContentLength: -1,
+        maxBodyLength: -1,
+        env: { FormData: [Function], Blob: [class Blob] },
+        validateStatus: [Function: validateStatus],
+        headers: Object [AxiosHeaders] {
+          Accept: 'application/json, text/plain, */*',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer your_llm_api_key',
+          'User-Agent': 'axios/1.13.5',
+          'Content-Length': '1616',
+          'Accept-Encoding': 'gzip, compress, deflate, br'
+        },
+        method: 'post',
+        url: 'https://api.openai.com/v1/chat/completions',
+        data: '{"model":"gpt-3.5-turbo","messages":[{"role":"system","content":"You are a helpful assistant that outputs strict JSON."},{"role":"user","content":"You are an expert technical educator. create a daily lesson on the following topic:\\r\\n\\r\\nTopic: Variables\\r\\nSubject: Programming Basics\\r\\nDifficulty: Easy\\r\\n\\r\\nReturn ONLY valid JSON with this exact structure:\\r\\n{\\r\\n  \\"topic\\": \\"Variables\\",\\r\\n  \\"subject\\": \\"Programming Basics\\",\\r\\n  \\"difficulty\\": \\"Easy\\",\\r\\n  \\"summary\\": \\"Concise summary (min 50 chars)\\",\\r\\n  \\"explanation\\": \\"Detailed explanation (min 200 chars)\\",\\r\\n  \\"codeExample\\": {\\r\\n    \\"language\\": \\"programming language\\",\\r\\n    \\"code\\": \\"code snippet\\"\\r\\n  },\\r\\n  \\"questions\\": [\\r\\n    {\\r\\n      \\"id\\": \\"q1\\",\\r\\n      \\"question\\": \\"Question text\\",\\r\\n      \\"options\\": [\\"Option 1\\", \\"Option 2\\", \\"Option 3\\", \\"Option 4\\"],\\r\\n      \\"correctAnswer\\": \\"Correct Option text\\"\\r\\n    }\\r\\n  ],\\r\\n  \\"codingQuestions\\": [\\r\\n    {\\r\\n      \\"id\\": \\"cq1\\",\\r\\n      \\"title\\": \\"Coding Question Title\\",\\r\\n      \\"description\\": \\"Problem description\\",\\r\\n      \\"difficulty\\": \\"Medium\\",\\r\\n      \\"testCases\\": [\\r\\n        { \\"input\\": \\"input string\\", \\"output\\": \\"expected output\\" }\\r\\n      ]\\r\\n    }\\r\\n  ]\\r\\n}\\r\\n\\r\\n- For `questions`, provide 10 to 15 multiple-choice questions.\\r\\n- For `codingQuestions`, provide 1 or 2 coding challenges (or 0 if inappropriate for topic).\\r\\n- Ensure the content is accurate and educational.\\r\\nDo not include any markdown formatting or comments outside the JSON.\\r\\n"}],"temperature":0.2,"max_tokens":1500}',
+        allowAbsoluteUrls: true
+      },
+      request: <ref *1> ClientRequest {
+        _events: [Object: null prototype] {
+          abort: [Function (anonymous)],
+          aborted: [Function (anonymous)],
+          connect: [Function (anonymous)],
+          error: [Function (anonymous)],
+          socket: [Function (anonymous)],
+          timeout: [Function (anonymous)],
+          finish: [Function: requestOnFinish]
+        },
+        _eventsCount: 7,
+        _maxListeners: undefined,
+        outputData: [],
+        outputSize: 0,
+        writable: true,
+        destroyed: true,
+        _last: false,
+        chunkedEncoding: false,
+        shouldKeepAlive: true,
+        maxRequestsOnConnectionReached: false,
+        _defaultKeepAlive: true,
+        useChunkedEncodingByDefault: true,
+        sendDate: false,
+        _removedConnection: false,
+        _removedContLen: false,
+        _removedTE: false,
+        strictContentLength: false,
+        _contentLength: 1616,
+        _hasBody: true,
+        _trailer: '',
+        finished: true,
+        _headerSent: true,
+        _closed: true,
+        _header: 'POST /v1/chat/completions HTTP/1.1\r\n' +
+          'Accept: application/json, text/plain, */*\r\n' +
+          'Content-Type: application/json\r\n' +
+          'Authorization: Bearer your_llm_api_key\r\n' +
+          'User-Agent: axios/1.13.5\r\n' +
+          'Content-Length: 1616\r\n' +
+          'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+          'Host: api.openai.com\r\n' +
+          'Connection: keep-alive\r\n' +
+          '\r\n',
+        _keepAliveTimeout: 0,
+        _onPendingData: [Function: nop],
+        agent: Agent {
+          _events: [Object: null prototype],
+          _eventsCount: 2,
+          _maxListeners: undefined,
+          options: [Object: null prototype],
+          defaultPort: 443,
+          protocol: 'https:',
+          requests: [Object: null prototype] {},
+          sockets: [Object: null prototype] {},
+          freeSockets: [Object: null prototype],
+          keepAliveMsecs: 1000,
+          keepAlive: true,
+          maxSockets: Infinity,
+          maxFreeSockets: 256,
+          scheduling: 'lifo',
+          maxTotalSockets: Infinity,
+          totalSocketCount: 1,
+          agentKeepAliveTimeoutBuffer: 1000,
+          maxCachedSessions: 100,
+          _sessionCache: [Object],
+          [Symbol(shapeMode)]: false,
+          [Symbol(kCapture)]: false
+        },
+        socketPath: undefined,
+        method: 'POST',
+        maxHeaderSize: undefined,
+        insecureHTTPParser: undefined,
+        joinDuplicateHeaders: undefined,
+        path: '/v1/chat/completions',
+        _ended: true,
+        res: IncomingMessage {
+          _events: [Object],
+          _readableState: [ReadableState],
+          _maxListeners: undefined,
+          socket: null,
+          httpVersionMajor: 1,
+          httpVersionMinor: 1,
+          httpVersion: '1.1',
+          complete: true,
+          rawHeaders: [Array],
+          rawTrailers: [],
+          joinDuplicateHeaders: undefined,
+          aborted: false,
+          upgrade: false,
+          url: '',
+          method: null,
+          statusCode: 401,
+          statusMessage: 'Unauthorized',
+          client: [TLSSocket],
+          _consuming: false,
+          _dumped: false,
+          req: [Circular *1],
+          _eventsCount: 4,
+          responseUrl: 'https://api.openai.com/v1/chat/completions',
+          redirects: [],
+          [Symbol(shapeMode)]: true,
+          [Symbol(kCapture)]: false,
+          [Symbol(kHeaders)]: [Object],
+          [Symbol(kHeadersCount)]: 30,
+          [Symbol(kTrailers)]: null,
+          [Symbol(kTrailersCount)]: 0
+        },
+        aborted: false,
+        timeoutCb: null,
+        upgradeOrConnect: false,
+        parser: null,
+        maxHeadersCount: null,
+        reusedSocket: false,
+        host: 'api.openai.com',
+        protocol: 'https:',
+        _redirectable: Writable {
+          _events: [Object],
+          _writableState: [WritableState],
+          _maxListeners: undefined,
+          _options: [Object],
+          _ended: true,
+          _ending: true,
+          _redirectCount: 0,
+          _redirects: [],
+          _requestBodyLength: 1616,
+          _requestBodyBuffers: [],
+          _eventsCount: 3,
+          _onNativeResponse: [Function (anonymous)],
+          _currentRequest: [Circular *1],
+          _currentUrl: 'https://api.openai.com/v1/chat/completions',
+          _timeout: null,
+          [Symbol(shapeMode)]: true,
+          [Symbol(kCapture)]: false
+        },
+        [Symbol(shapeMode)]: false,
+        [Symbol(kCapture)]: false,
+        [Symbol(kBytesWritten)]: 0,
+        [Symbol(kNeedDrain)]: false,
+        [Symbol(corked)]: 0,
+        [Symbol(kChunkedBuffer)]: [],
+        [Symbol(kChunkedLength)]: 0,
+        [Symbol(kSocket)]: TLSSocket {
+          _tlsOptions: [Object],
+          _secureEstablished: true,
+          _securePending: false,
+          _newSessionPending: false,
+          _controlReleased: true,
+          secureConnecting: false,
+          _SNICallback: null,
+          servername: 'api.openai.com',
+          alpnProtocol: false,
+          authorized: true,
+          authorizationError: null,
+          encrypted: true,
+          _events: [Object: null prototype],
+          _eventsCount: 9,
+          connecting: false,
+          _hadError: false,
+          _parent: null,
+          _host: 'api.openai.com',
+          _closeAfterHandlingError: false,
+          _readableState: [ReadableState],
+          _writableState: [WritableState],
+          allowHalfOpen: false,
+          _maxListeners: undefined,
+          _sockname: null,
+          _pendingData: null,
+          _pendingEncoding: '',
+          server: undefined,
+          _server: null,
+          ssl: [TLSWrap],
+          _requestCert: true,
+          _rejectUnauthorized: true,
+          timeout: 5000,
+          parser: null,
+          _httpMessage: null,
+          autoSelectFamilyAttemptedAddresses: [Array],
+          [Symbol(alpncallback)]: null,
+          [Symbol(res)]: [TLSWrap],
+          [Symbol(verified)]: true,
+          [Symbol(pendingSession)]: null,
+          [Symbol(async_id_symbol)]: -1,
+          [Symbol(kHandle)]: [TLSWrap],
+          [Symbol(lastWriteQueueSize)]: 0,
+          [Symbol(timeout)]: Timeout {
+            _idleTimeout: 5000,
+            _idlePrev: [TimersList],
+            _idleNext: [Timeout],
+            _idleStart: 4136,
+            _onTimeout: [Function: bound ],
+            _timerArgs: undefined,
+            _repeat: null,
+            _destroyed: false,
+            [Symbol(refed)]: false,
+            [Symbol(kHasPrimitive)]: false,
+            [Symbol(asyncId)]: 851,
+            [Symbol(triggerId)]: 849,
+            [Symbol(kAsyncContextFrame)]: undefined
+          },
+          [Symbol(kBuffer)]: null,
+          [Symbol(kBufferCb)]: null,
+          [Symbol(kBufferGen)]: null,
+          [Symbol(shapeMode)]: true,
+          [Symbol(kCapture)]: false,
+          [Symbol(kSetNoDelay)]: false,
+          [Symbol(kSetKeepAlive)]: true,
+          [Symbol(kSetKeepAliveInitialDelay)]: 1,
+          [Symbol(kBytesRead)]: 0,
+          [Symbol(kBytesWritten)]: 0,
+          [Symbol(connect-options)]: [Object]
+        },
+        [Symbol(kOutHeaders)]: [Object: null prototype] {
+          accept: [Array],
+          'content-type': [Array],
+          authorization: [Array],
+          'user-agent': [Array],
+          'content-length': [Array],
+          'accept-encoding': [Array],
+          host: [Array]
+        },
+        [Symbol(errored)]: null,
+        [Symbol(kHighWaterMark)]: 16384,
+        [Symbol(kRejectNonStandardBodyWrites)]: false,
+        [Symbol(kUniqueHeaders)]: null
+      },
+      response: {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: Object [AxiosHeaders] {
+          date: 'Sun, 22 Feb 2026 12:07:13 GMT',
+          'content-type': 'application/json; charset=utf-8',
+          'content-length': '266',
+          connection: 'keep-alive',
+          vary: 'Origin',
+          'x-request-id': 'req_43466d082c9b4c968f2a68cd4507a2c5',
+          'x-openai-proxy-wasm': 'v0.1',
+          server: 'cloudflare',
+          'cf-cache-status': 'DYNAMIC',
+          'set-cookie': [Array],
+          'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+          'x-content-type-options': 'nosniff',
+          'cf-ray': '9d1e5ca20b083d2e-BLR',
+          'alt-svc': 'h3=":443"; ma=86400'
+        },
+        config: {
+          transitional: [Object],
+          adapter: [Array],
+          transformRequest: [Array],
+          transformResponse: [Array],
+          timeout: 0,
+          xsrfCookieName: 'XSRF-TOKEN',
+          xsrfHeaderName: 'X-XSRF-TOKEN',
+          maxContentLength: -1,
+          maxBodyLength: -1,
+          env: [Object],
+          validateStatus: [Function: validateStatus],
+          headers: [Object [AxiosHeaders]],
+          method: 'post',
+          url: 'https://api.openai.com/v1/chat/completions',
+          data: '{"model":"gpt-3.5-turbo","messages":[{"role":"system","content":"You are a helpful assistant that outputs strict JSON."},{"role":"user","content":"You are an expert technical educator. create a daily lesson on the following topic:\\r\\n\\r\\nTopic: Variables\\r\\nSubject: Programming Basics\\r\\nDifficulty: Easy\\r\\n\\r\\nReturn ONLY valid JSON with this exact structure:\\r\\n{\\r\\n  \\"topic\\": \\"Variables\\",\\r\\n  \\"subject\\": \\"Programming Basics\\",\\r\\n  \\"difficulty\\": \\"Easy\\",\\r\\n  \\"summary\\": \\"Concise summary (min 50 chars)\\",\\r\\n  \\"explanation\\": \\"Detailed explanation (min 200 chars)\\",\\r\\n  \\"codeExample\\": {\\r\\n    \\"language\\": \\"programming language\\",\\r\\n    \\"code\\": \\"code snippet\\"\\r\\n  },\\r\\n  \\"questions\\": [\\r\\n    {\\r\\n      \\"id\\": \\"q1\\",\\r\\n      \\"question\\": \\"Question text\\",\\r\\n      \\"options\\": [\\"Option 1\\", \\"Option 2\\", \\"Option 3\\", \\"Option 4\\"],\\r\\n      \\"correctAnswer\\": \\"Correct Option text\\"\\r\\n    }\\r\\n  ],\\r\\n  \\"codingQuestions\\": [\\r\\n    {\\r\\n      \\"id\\": \\"cq1\\",\\r\\n      \\"title\\": \\"Coding Question Title\\",\\r\\n      \\"description\\": \\"Problem description\\",\\r\\n      \\"difficulty\\": \\"Medium\\",\\r\\n      \\"testCases\\": [\\r\\n        { \\"input\\": \\"input string\\", \\"output\\": \\"expected output\\" }\\r\\n      ]\\r\\n    }\\r\\n  ]\\r\\n}\\r\\n\\r\\n- For `questions`, provide 10 to 15 multiple-choice questions.\\r\\n- For `codingQuestions`, provide 1 or 2 coding challenges (or 0 if inappropriate for topic).\\r\\n- Ensure the content is accurate and educational.\\r\\nDo not include any markdown formatting or comments outside the JSON.\\r\\n"}],"temperature":0.2,"max_tokens":1500}',
+          allowAbsoluteUrls: true
+        },
+        request: <ref *1> ClientRequest {
+          _events: [Object: null prototype],
+          _eventsCount: 7,
+          _maxListeners: undefined,
+          outputData: [],
+          outputSize: 0,
+          writable: true,
+          destroyed: true,
+          _last: false,
+          chunkedEncoding: false,
+          shouldKeepAlive: true,
+          maxRequestsOnConnectionReached: false,
+          _defaultKeepAlive: true,
+          useChunkedEncodingByDefault: true,
+          sendDate: false,
+          _removedConnection: false,
+          _removedContLen: false,
+          _removedTE: false,
+          strictContentLength: false,
+          _contentLength: 1616,
+          _hasBody: true,
+          _trailer: '',
+          finished: true,
+          _headerSent: true,
+          _closed: true,
+          _header: 'POST /v1/chat/completions HTTP/1.1\r\n' +
+            'Accept: application/json, text/plain, */*\r\n' +
+            'Content-Type: application/json\r\n' +
+            'Authorization: Bearer your_llm_api_key\r\n' +
+            'User-Agent: axios/1.13.5\r\n' +
+            'Content-Length: 1616\r\n' +
+            'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+            'Host: api.openai.com\r\n' +
+            'Connection: keep-alive\r\n' +
+            '\r\n',
+          _keepAliveTimeout: 0,
+          _onPendingData: [Function: nop],
+          agent: [Agent],
+          socketPath: undefined,
+          method: 'POST',
+          maxHeaderSize: undefined,
+          insecureHTTPParser: undefined,
+          joinDuplicateHeaders: undefined,
+          path: '/v1/chat/completions',
+          _ended: true,
+          res: [IncomingMessage],
+          aborted: false,
+          timeoutCb: null,
+          upgradeOrConnect: false,
+          parser: null,
+          maxHeadersCount: null,
+          reusedSocket: false,
+          host: 'api.openai.com',
+          protocol: 'https:',
+          _redirectable: [Writable],
+          [Symbol(shapeMode)]: false,
+          [Symbol(kCapture)]: false,
+          [Symbol(kBytesWritten)]: 0,
+          [Symbol(kNeedDrain)]: false,
+          [Symbol(corked)]: 0,
+          [Symbol(kChunkedBuffer)]: [],
+          [Symbol(kChunkedLength)]: 0,
+          [Symbol(kSocket)]: [TLSSocket],
+          [Symbol(kOutHeaders)]: [Object: null prototype],
+          [Symbol(errored)]: null,
+          [Symbol(kHighWaterMark)]: 16384,
+          [Symbol(kRejectNonStandardBodyWrites)]: false,
+          [Symbol(kUniqueHeaders)]: null
+        },
+        data: { error: [Object] }
+      },
+      status: 401
+    }
+
+    [0m [90m 148 |[39m             lessonData [33m=[39m [36mawait[39m generateLesson(topic[33m,[39m cluster[33m,[39m targetTopicData[33m.[39mdifficulty)[33m;[39m
+     [90m 149 |[39m         } [36mcatch[39m (err) {
+    [31m[1m>[22m[39m[90m 150 |[39m             console[33m.[39merror([32m"Failed to generate session content:"[39m[33m,[39m err)[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 151 |[39m             [36mreturn[39m res[33m.[39mstatus([35m500[39m)[33m.[39mjson({ error[33m:[39m [32m"Failed to generate session content."[39m })[33m;[39m
+     [90m 152 |[39m         }
+     [90m 153 |[39m[0m
+
+      at error (src/routes/daily.js:150:21)
+
+FAIL tests/integration/dailySession.test.js
+  Unified Daily Session API Verification
+    × Identical session returned on repeat calls to /api/daily/session (1331 ms)
+
+  ● Unified Daily Session API Verification › Identical session returned on repeat calls to /api/daily/session
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+    [0m [90m 65 |[39m             [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer ${token}`[39m)[33m;[39m
+     [90m 66 |[39m
+    [31m[1m>[22m[39m[90m 67 |[39m         expect(firstRes[33m.[39mstatusCode)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m    |[39m                                     [31m[1m^[22m[39m
+     [90m 68 |[39m         expect(firstRes[33m.[39mbody)[33m.[39mtoHaveProperty([32m'_id'[39m)[33m;[39m
+     [90m 69 |[39m         expect(firstRes[33m.[39mbody)[33m.[39mtoHaveProperty([32m'cluster'[39m)[33m;[39m
+     [90m 70 |[39m         expect(firstRes[33m.[39mbody)[33m.[39mtoHaveProperty([32m'topic'[39m)[33m;[39m[0m
+
+      at Object.toBe (tests/integration/dailySession.test.js:67:37)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        3.836 s, estimated 6 s
+Ran all test suites matching /tests\\integration\\dailySession.test.js/i.
