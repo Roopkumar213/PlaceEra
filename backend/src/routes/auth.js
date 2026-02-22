@@ -228,17 +228,41 @@ router.post('/reset-password/:token', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
     try {
         const demoId = '507f1f77bcf86cd799439011';
-        if (req.user.id === demoId || req.user.id === 'demo-user-id') { // Handle legacy string if somehow token persists
+        if (req.user.id === demoId || req.user.id === 'demo-user-id') {
             return res.json({
                 id: demoId,
                 name: 'Demo User',
                 email: 'demo@elevare.com',
-                streak: 42
+                streak: 42,
+                onboardingComplete: true
             });
         }
 
         const user = await User.findById(req.user.id).select('-passwordHash');
         res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// PUT /api/auth/onboarding
+// Marks onboarding as complete and updates initial preferences
+router.put('/onboarding', auth, async (req, res) => {
+    try {
+        const { timezone, preferredTimes, onceOrTwice } = req.body;
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (timezone) user.timezone = timezone;
+        if (preferredTimes) user.preferredTimes = preferredTimes;
+        if (onceOrTwice) user.onceOrTwice = onceOrTwice;
+
+        user.onboardingComplete = true;
+        await user.save();
+
+        res.json({ message: 'Onboarding complete', user: { id: user.id, onboardingComplete: true } });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

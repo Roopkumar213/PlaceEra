@@ -13,9 +13,21 @@ const redisConfig = {
     }
 };
 
-const connection = new IORedis(redisConfig);
+let connection = null;
 
-connection.on('connect', () => console.log('✅ Redis Client Connected'));
-connection.on('error', (err) => console.error('❌ Redis Client Error:', err));
+if (process.env.REDIS_ENABLED !== 'false') {
+    connection = new IORedis(redisConfig);
+    connection.on('connect', () => console.log('✅ Redis Client Connected'));
+    connection.on('error', (err) => console.error('❌ Redis Client Error:', err));
+} else {
+    // console.log('ℹ️ Redis Client: Skipping connection (REDIS_ENABLED=false)');
+    // Provide a minimal mock to satisfy imports without throwing immediately
+    connection = {
+        on: () => { },
+        quit: async () => { },
+        defineCommand: () => { },
+        options: redisConfig
+    };
+}
 
 module.exports = connection;

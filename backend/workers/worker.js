@@ -23,7 +23,7 @@ const processDecay = async (job) => {
 
         const cursor = TopicMastery.find({
             mastery: { $gt: 0 },
-            lastAttemptAt: { $lt: oneDayAgo }
+            lastAttemptAt: { $ne: null, $lt: oneDayAgo }
         })
             .select('_id userId topic subject mastery lastAttemptAt')
             .cursor({ batchSize: BATCH_SIZE });

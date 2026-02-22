@@ -52,22 +52,36 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id; // from authMiddleware
 
+        // 0. Auto-initialize for new users
+        const { initializeUserMasteryIfEmpty } = require('../services/masteryService');
+        await initializeUserMasteryIfEmpty(userId);
+
         // Parallel fetch for perf
-        const [streak, weakTopics, totalLessons, recentActivity] = await Promise.all([
+        const [streak, weakTopics, totalLessons, recentActivity, firstRecommendedTopic, hasStartedLearning] = await Promise.all([
             calculateStreak(userId),
-            TopicMastery.find({ userId }).sort({ proficiency: 1 }).limit(3),
+            TopicMastery.find({ userId }).sort({ mastery: 1 }).limit(3),
             UserProgress.countDocuments({ userId }),
             UserProgress.find({ userId })
                 .sort({ completedAt: -1 })
                 .limit(5)
-                .populate('lessonId', 'topic subject')
+                .populate('lessonId', 'topic subject'),
+            TopicMastery.findOne({ userId, recommended: true }).sort({ mastery: 1 }),
+            TopicMastery.exists({
+                userId,
+                $or: [
+                    { lastAttemptAt: { $ne: null } },
+                    { mastery: { $gt: 5 } }
+                ]
+            })
         ]);
 
         res.json({
             streak,
             totalLessons,
             weakTopics,
-            recentActivity
+            recentActivity,
+            firstRecommendedTopic,
+            isFirstSession: !hasStartedLearning
         });
     } catch (err) {
         console.error('Dashboard Error:', err);
