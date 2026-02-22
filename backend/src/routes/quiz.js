@@ -8,22 +8,34 @@ const authMiddleware = require('../middleware/authMiddleware');
 const RevisionQueue = require('../models/RevisionQueue');
 const SubjectMastery = require('../models/SubjectMastery');
 
-// POST /api/quiz/submit
-router.post('/submit', authMiddleware, async (req, res) => {
-    try {
-        const { quizId, score, answers, submissionId } = req.body;
-        const userId = req.user.id; // From authMiddleware
+const { submissionLimiter } = require('../middleware/rateLimiter');
+const { validateBody } = require('../middleware/validateRequest');
 
-        if (!quizId || score === undefined) {
-            return res.status(400).json({ message: 'Missing quizId or score' });
+const quizSubmissionSchema = {
+    type: 'object',
+    properties: {
+        quizId: { type: 'string' },
+        submissionId: { type: 'string' },
+        answers: {
+            type: 'object',
+            additionalProperties: { type: 'string' }
         }
+    },
+    required: ['quizId', 'answers'],
+    additionalProperties: false
+};
+
+// POST /api/quiz/submit
+router.post('/submit', authMiddleware, submissionLimiter, validateBody(quizSubmissionSchema), async (req, res) => {
+    try {
+        const { quizId, answers, submissionId } = req.body;
+        const userId = req.user.id;
 
         // --- IDEMPOTENCY CHECK ---
         const QuizSubmissionLog = require('../models/QuizSubmissionLog');
         if (submissionId) {
             const existingLog = await QuizSubmissionLog.findOne({ userId, submissionId });
             if (existingLog) {
-                console.log(`🔁 Replaying idempotent submission: ${submissionId}`);
                 return res.json(existingLog.resultSnapshot);
             }
         }
@@ -34,11 +46,20 @@ router.post('/submit', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Lesson not found' });
         }
 
-        const todayDate = new Date().toISOString().split('T')[0];
-        const quizTotal = lesson.quiz ? lesson.quiz.length : 0;
+        // --- SERVER-SIDE SCORE CALCULATION ---
+        let score = 0;
+        const quizItems = lesson.quiz || [];
+        quizItems.forEach((q, index) => {
+            if (answers[index] === q.correctAnswer) {
+                score++;
+            }
+        });
+
+        const quizTotal = quizItems.length;
         const percentage = quizTotal > 0 ? (score / quizTotal) * 100 : 0;
 
         // 2. Update UserProgress (Log the attempt)
+        const todayDate = new Date().toISOString().split('T')[0];
         let progress = await UserProgress.findOne({ userId, lessonId: quizId });
         if (progress) {
             if (score > progress.quizScore) progress.quizScore = score;
@@ -56,8 +77,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
         }
 
         // 3. ATOMIC INTELLIGENT MASTERY UPDATE (TRANSACTIONAL)
-        const mongoose = require('mongoose');
-        const session = await mongoose.startSession();
+        const { withTransaction } = require('../utils/dbUtils');
         const { evaluateAndUpdateUnlocks } = require('../services/masteryService');
 
         let currentMastery = 0;
@@ -67,7 +87,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
         let newTrend = 'unknown';
 
         try {
-            await session.withTransaction(async () => {
+            await withTransaction(async (session) => {
                 // Fetch current state
                 let topicMastery = await TopicMastery.findOne({ userId, topic: lesson.topic }).session(session);
 
@@ -82,7 +102,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
                                 unlocked: true
                             }
                         },
-                        { upsert: true, new: true, session }
+                        { upsert: true, returnDocument: 'after', session }
                     );
                 }
 
@@ -156,11 +176,10 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 const updatedMastery = await TopicMastery.findByIdAndUpdate(
                     topicMastery._id,
                     updateQuery,
-                    { new: true, session }
+                    { returnDocument: 'after', session }
                 );
 
-                // 4. Update Subject Mastery (Fair readiness calculation)
-                // Filter: Only include topics actually attempted to avoid dragging down avg with new unlocks
+                // 4. Update Subject Mastery
                 const subjectTopics = await TopicMastery.find({
                     userId,
                     subject: lesson.subject,
@@ -175,10 +194,13 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 await SubjectMastery.findOneAndUpdate(
                     { userId, subject: lesson.subject },
                     {
-                        averageMastery: avgMastery,
-                        totalTopics: totalAttempted,
-                        masteredTopics: masteredCount,
-                        lastUpdated: Date.now()
+                        $set: {
+                            averageMastery: avgMastery,
+                            totalTopics: totalAttempted,
+                            masteredTopics: masteredCount,
+                            lastUpdated: Date.now()
+                        },
+                        $inc: { totalAttempts: 1 }
                     },
                     { upsert: true, session }
                 );
@@ -209,10 +231,6 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     );
                 }
 
-                // --- DAY 2: DYNAMIC UNLOCK EVALUATION ---
-                // Performance Safety Guard:
-                // Skip if both current and previous mastery are >= 70 (no unlock likely triggered)
-                // EXCEPT if this is a first-time pass crossing the threshold.
                 const crossedThreshold = (currentMastery < 70 && newMastery >= 70);
                 const significantDegrade = (currentMastery >= 70 && newMastery < 70);
 
@@ -232,20 +250,13 @@ router.post('/submit', authMiddleware, async (req, res) => {
                     delta: actualDelta,
                     trendDirection: newTrend,
                     meta: { quizId, score: percentage, submissionId }
-                }], { session });
+                }], session ? { session } : {});
 
-            }, {
-                readPreference: 'primary',
-                readConcern: { level: 'snapshot' },
-                writeConcern: { w: 'majority' }
             });
         } catch (err) {
             console.error('Quiz Submission Failed:', err);
-            return res.status(500).json({ message: 'Transaction Aborted: ' + err.message });
-        } finally {
-            await session.endSession();
+            return res.status(500).json({ message: 'Operation Failed: ' + err.message });
         }
-
         // Result Construction
         const finalResult = {
             message: 'Quiz submitted successfully',
