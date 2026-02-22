@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 interface MockQuestion {
     id: string;
@@ -7,11 +8,16 @@ interface MockQuestion {
     options: string[];
     topic: string;
     subject: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
 }
+
+interface SubjectTimeSuggestion { minutes: number; difficultyBias: string }
 
 interface MockSessionConfig {
     totalQuestions: number;
     timeLimitMinutes: number;
+    difficultyProfile: string;
+    subjectTimeSuggestions: Record<string, SubjectTimeSuggestion>;
 }
 
 interface MockStartResponse {
@@ -21,18 +27,36 @@ interface MockStartResponse {
     config: MockSessionConfig;
 }
 
+interface DiffBreakdownEntry { correct: number; total: number; score: number }
+
 interface MockSubmitSummary {
     totalScore: number;
     correct: number;
     total: number;
     performanceDelta: number;
     timeSpentMinutes: number;
+    percentile: number | null;
     subjectBreakdown: Record<string, { correct: number; total: number; score: number }>;
+    difficultyBreakdown: Record<string, DiffBreakdownEntry>;
+    weakestTopic: { topic: string; subject: string; score: number } | null;
+    adaptiveConfig?: { difficultyProfile: string; timeLimitMinutes: number };
 }
 
 type MockPhase = 'idle' | 'loading' | 'in_progress' | 'submitting' | 'results' | 'error';
 
-const fetcher = () => {
+const DIFF_BADGE: Record<string, string> = {
+    Easy: 'bg-green-500/20 text-green-600',
+    Medium: 'bg-yellow-500/20 text-yellow-600',
+    Hard: 'bg-red-500/20 text-red-500'
+};
+
+const PROFILE_LABEL: Record<string, string> = {
+    EASY_HEAVY: '📗 Foundation Focus',
+    MIXED: '📘 Balanced',
+    HARD_HEAVY: '📕 Challenge Mode'
+};
+
+const authHeaders = () => {
     const token = localStorage.getItem('token');
     return { headers: { Authorization: `Bearer ${token}` } };
 };
@@ -44,7 +68,7 @@ export const MockTestEngine: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(0);
     const [summary, setSummary] = useState<MockSubmitSummary | null>(null);
-    const [error, setError] = useState<string>('');
+    const [error, setError] = useState('');
     const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
 
     // Countdown Timer
@@ -52,18 +76,14 @@ export const MockTestEngine: React.FC = () => {
         if (phase !== 'in_progress' || timeLeft <= 0) return;
         const interval = setInterval(() => {
             setTimeLeft(t => {
-                if (t <= 1) {
-                    clearInterval(interval);
-                    handleSubmit();
-                    return 0;
-                }
+                if (t <= 1) { clearInterval(interval); handleSubmit(); return 0; }
                 return t - 1;
             });
         }, 1000);
         return () => clearInterval(interval);
     }, [phase, timeLeft]);
 
-    // Rate limit cooldown ticker
+    // Rate-limit cooldown ticker
     useEffect(() => {
         if (rateLimitCooldown <= 0) return;
         const t = setInterval(() => setRateLimitCooldown(c => Math.max(0, c - 1)), 1000);
@@ -83,7 +103,7 @@ export const MockTestEngine: React.FC = () => {
             const res = await axios.post(
                 `${import.meta.env.VITE_API_BASE_URL}/api/mock/start`,
                 {},
-                fetcher()
+                authHeaders()
             );
             setSession(res.data);
             setAnswers({});
@@ -103,9 +123,8 @@ export const MockTestEngine: React.FC = () => {
         }
     };
 
-    const handleAnswer = (questionId: string, answer: string) => {
+    const handleAnswer = (questionId: string, answer: string) =>
         setAnswers(prev => ({ ...prev, [questionId]: answer }));
-    };
 
     const handleSubmit = useCallback(async () => {
         if (!session) return;
@@ -114,7 +133,7 @@ export const MockTestEngine: React.FC = () => {
             const res = await axios.post(
                 `${import.meta.env.VITE_API_BASE_URL}/api/mock/submit`,
                 { sessionId: session.sessionId, answers },
-                fetcher()
+                authHeaders()
             );
             setSummary(res.data.summary);
             setPhase('results');
@@ -133,15 +152,9 @@ export const MockTestEngine: React.FC = () => {
         }
     }, [session, answers]);
 
-    const reset = () => {
-        setPhase('idle');
-        setSession(null);
-        setAnswers({});
-        setSummary(null);
-        setError('');
-    };
+    const reset = () => { setPhase('idle'); setSession(null); setAnswers({}); setSummary(null); setError(''); };
 
-    // ── IDLE STATE ─────────────────────────────────────────────────────────────
+    // ── IDLE / ERROR ───────────────────────────────────────────────────────────
     if (phase === 'idle' || phase === 'error') {
         return (
             <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center text-center gap-6">
@@ -151,9 +164,9 @@ export const MockTestEngine: React.FC = () => {
                     </svg>
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold mb-2">Weekly Mock Test</h2>
+                    <h2 className="text-xl font-bold mb-1">Adaptive Mock Test · V2</h2>
                     <p className="text-muted-foreground text-sm max-w-sm">
-                        30 questions • 45 minutes • Weighted towards your weakest domains
+                        30 questions · Difficulty scales with your readiness · Time-pressure adjusted per subject
                     </p>
                 </div>
 
@@ -169,23 +182,30 @@ export const MockTestEngine: React.FC = () => {
                     </div>
                 )}
 
-                <button
-                    onClick={startMock}
-                    disabled={rateLimitCooldown > 0}
-                    className="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Begin Mock Test
-                </button>
+                <div className="flex gap-3 flex-wrap justify-center">
+                    <button
+                        onClick={startMock}
+                        disabled={rateLimitCooldown > 0}
+                        className="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Begin Mock Test
+                    </button>
+                    <Link to="/mock/report">
+                        <button className="px-6 py-3 rounded-lg border border-border text-sm hover:bg-muted/50 transition">
+                            📊 View Full Report
+                        </button>
+                    </Link>
+                </div>
             </div>
         );
     }
 
-    // ── LOADING STATE ──────────────────────────────────────────────────────────
+    // ── LOADING ────────────────────────────────────────────────────────────────
     if (phase === 'loading') {
         return (
             <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center gap-4">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-muted-foreground text-sm">Generating your personalized mock test...</p>
+                <p className="text-muted-foreground text-sm">Generating your adaptive mock test…</p>
             </div>
         );
     }
@@ -196,32 +216,62 @@ export const MockTestEngine: React.FC = () => {
         const progress = ((currentIndex + 1) / session.questions.length) * 100;
         const answered = answers[q.id];
         const isLast = currentIndex === session.questions.length - 1;
+        const timePct = session.config.timeLimitMinutes > 0
+            ? (timeLeft / (session.config.timeLimitMinutes * 60)) * 100 : 0;
+
+        // Time hint for current subject
+        const subjectHint = session.config.subjectTimeSuggestions?.[q.subject];
 
         return (
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 {/* Top bar */}
                 <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-muted/30">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium text-muted-foreground">
-                            Q{currentIndex + 1} of {session.questions.length}
+                            Q{currentIndex + 1}/{session.questions.length}
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{q.subject}</span>
+                        {q.difficulty && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFF_BADGE[q.difficulty] ?? ''}`}>
+                                {q.difficulty}
+                            </span>
+                        )}
+                        {session.config.difficultyProfile && (
+                            <span className="text-xs text-muted-foreground hidden sm:inline">
+                                {PROFILE_LABEL[session.config.difficultyProfile] ?? session.config.difficultyProfile}
+                            </span>
+                        )}
                     </div>
                     <div className={`font-mono text-sm font-bold ${timeLeft < 300 ? 'text-red-500' : 'text-foreground'}`}>
                         ⏱ {formatTime(timeLeft)}
                     </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="h-1 bg-muted">
-                    <div className="h-1 bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                {/* Dual progress: question + time */}
+                <div className="h-1.5 bg-muted flex">
+                    <div className="h-1.5 bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="h-0.5 bg-muted">
+                    <div
+                        className={`h-0.5 transition-all duration-1000 ${timePct < 20 ? 'bg-red-500' : timePct < 40 ? 'bg-yellow-500' : 'bg-green-500/50'}`}
+                        style={{ width: `${timePct}%` }}
+                    />
                 </div>
 
                 <div className="p-6 space-y-6">
-                    {/* Question */}
+                    {/* Adaptive time hint */}
+                    {subjectHint && (
+                        <div className="text-xs text-muted-foreground bg-muted/30 rounded px-3 py-1.5 flex items-center gap-2">
+                            <span>💡</span>
+                            <span>
+                                Suggested time for <strong>{q.subject}</strong>: <strong>{subjectHint.minutes}m</strong>
+                                {' '}· Bias: <strong>{subjectHint.difficultyBias.replace('_', ' ')}</strong>
+                            </span>
+                        </div>
+                    )}
+
                     <p className="text-base font-medium leading-relaxed">{q.questionText}</p>
 
-                    {/* Options */}
                     <div className="space-y-2">
                         {q.options.map((opt, idx) => (
                             <button
@@ -239,7 +289,6 @@ export const MockTestEngine: React.FC = () => {
                         ))}
                     </div>
 
-                    {/* Navigation */}
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                         <button
                             onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
@@ -277,12 +326,12 @@ export const MockTestEngine: React.FC = () => {
         return (
             <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center gap-4">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-muted-foreground text-sm">Calculating your results...</p>
+                <p className="text-muted-foreground text-sm">Calculating your results…</p>
             </div>
         );
     }
 
-    // ── RESULTS ─────────────────────────────────────────────────────────────────
+    // ── RESULTS ────────────────────────────────────────────────────────────────
     if (phase === 'results' && summary) {
         const delta = summary.performanceDelta;
         const deltaColor = delta > 0 ? 'text-green-500' : delta < 0 ? 'text-red-500' : 'text-muted-foreground';
@@ -300,6 +349,16 @@ export const MockTestEngine: React.FC = () => {
                     <p className={`text-sm font-semibold ${deltaColor}`}>
                         Mastery Δ: {deltaSign}{delta.toFixed(2)} pts
                     </p>
+                    {summary.percentile !== null && (
+                        <p className="text-xs text-muted-foreground">
+                            Percentile (vs own history): <strong className="text-foreground">P{summary.percentile}</strong>
+                        </p>
+                    )}
+                    {summary.adaptiveConfig && (
+                        <p className="text-xs text-muted-foreground">
+                            Profile: <strong>{PROFILE_LABEL[summary.adaptiveConfig.difficultyProfile] ?? summary.adaptiveConfig.difficultyProfile}</strong>
+                        </p>
+                    )}
                 </div>
 
                 {/* Subject Breakdown */}
@@ -321,19 +380,47 @@ export const MockTestEngine: React.FC = () => {
                     ))}
                 </div>
 
+                {/* Difficulty Breakdown */}
+                {summary.difficultyBreakdown && Object.keys(summary.difficultyBreakdown).length > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">By Difficulty</h3>
+                        {(['Easy', 'Medium', 'Hard'] as const).map(diff => {
+                            const d = summary.difficultyBreakdown[diff];
+                            if (!d) return null;
+                            const pct = Math.round(d.score);
+                            const barColor = diff === 'Easy' ? 'bg-green-500' : diff === 'Medium' ? 'bg-yellow-500' : 'bg-red-500';
+                            return (
+                                <div key={diff} className="space-y-1">
+                                    <div className="flex justify-between text-sm">
+                                        <span className={DIFF_BADGE[diff] ? '' : ''}>{diff}</span>
+                                        <span className="text-muted-foreground font-mono">{d.correct}/{d.total} ({pct}%)</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                        <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Weakest Topic */}
+                {summary.weakestTopic && (
+                    <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm">
+                        <p className="font-semibold text-red-500 mb-0.5">⚠ Weakest Topic This Session</p>
+                        <p>{summary.weakestTopic.topic} · {Math.round(summary.weakestTopic.score)}% accuracy</p>
+                    </div>
+                )}
+
                 <div className="flex gap-3 pt-2">
-                    <button
-                        onClick={reset}
-                        className="flex-1 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted/50 transition"
-                    >
+                    <button onClick={reset} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted/50 transition">
                         Done
                     </button>
-                    <a
-                        href="/mock"
-                        className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold text-center hover:bg-primary/90 transition"
-                    >
-                        View History
-                    </a>
+                    <Link to="/mock/report" className="flex-1">
+                        <button className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition">
+                            📊 Full Report
+                        </button>
+                    </Link>
                 </div>
             </div>
         );

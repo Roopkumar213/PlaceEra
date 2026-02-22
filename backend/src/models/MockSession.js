@@ -36,6 +36,31 @@ const MockSessionSchema = new mongoose.Schema({
     performanceDelta: {
         type: Number // Overall mastery change
     },
+    // V2 Analytics Fields
+    difficultyBreakdown: {
+        type: Map,
+        of: {
+            correct: { type: Number, default: 0 },
+            total: { type: Number, default: 0 },
+            score: { type: Number, default: 0 }
+        },
+        default: {}
+    },
+    weakestTopic: {
+        topic: { type: String },
+        subject: { type: String },
+        score: { type: Number }
+    },
+    percentile: {
+        type: Number,   // 0-100, vs user's own history
+        default: null
+    },
+    // Adaptive config recorded so we can explain the session to the user
+    adaptiveConfig: {
+        difficultyProfile: { type: String },   // e.g. "EASY_HEAVY" | "MIXED" | "HARD_HEAVY"
+        timeLimitMinutes: { type: Number },
+        subjectWeights: { type: mongoose.Schema.Types.Mixed }
+    },
     status: {
         type: String,
         enum: ['IN_PROGRESS', 'COMPLETED'],
@@ -46,10 +71,11 @@ const MockSessionSchema = new mongoose.Schema({
         conceptId: { type: mongoose.Schema.Types.ObjectId, ref: 'DailyConcept' },
         topic: String,
         subject: String,
-        questionIndex: Number, // Index within DailyConcept.quiz
+        questionIndex: Number,
         questionText: String,
         options: [String],
-        correctAnswer: String
+        correctAnswer: String,
+        difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Medium' }
     }]
 }, { timestamps: true });
 
