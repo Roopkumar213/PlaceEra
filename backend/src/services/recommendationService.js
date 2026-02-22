@@ -2,23 +2,32 @@ const SubjectMastery = require('../models/SubjectMastery');
 const TopicMastery = require('../models/TopicMastery');
 const Topic = require('../models/Topic');
 const RevisionQueue = require('../models/RevisionQueue');
+const Track = require('../models/Track');
 const { sortSubjectsByWeakness } = require('../utils/engineHelpers');
 
 /**
  * Intelligent Recommendation Engine using Weakest Domain Philosophy (Day 3).
  * Identifies the subject where the user is struggling most and picks the optimal topic.
+ * Now incorporates Track Weights for Multi-Track Adaptive Routing.
  * @param {string} userId
  */
 const getWeakestDomainRecommendation = async (userId) => {
     try {
-        // 1. Fetch SubjectMastery records
-        const rawSubjectMasteries = await SubjectMastery.find({ userId });
+        // 1. Fetch SubjectMastery records and Track weights
+        const [rawSubjectMasteries, tracks] = await Promise.all([
+            SubjectMastery.find({ userId }),
+            Track.find({})
+        ]);
+
         if (!rawSubjectMasteries || rawSubjectMasteries.length === 0) {
             return null;
         }
 
-        // Use pure helper for deterministic sorting & normalization
-        const sortedSubjects = sortSubjectsByWeakness(rawSubjectMasteries);
+        const trackWeights = {};
+        tracks.forEach(t => trackWeights[t.name] = t.weight);
+
+        // Use pure helper with track weights for deterministic sorting
+        const sortedSubjects = sortSubjectsByWeakness(rawSubjectMasteries, trackWeights);
 
         // 2. Iterate subjects to find the best recommendation (Handles Case B Fallback)
         for (const weakestSubject of sortedSubjects) {

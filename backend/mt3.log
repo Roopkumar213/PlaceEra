@@ -1,0 +1,47 @@
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (5) from ..\.env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    Adaptive: Selected PRIMARY (DSA) Variables from bucket.
+
+      at log (src/routes/daily.js:198:21)
+
+FAIL tests/integration/multitrack.test.js
+  Multi-Track Adaptive Engine V2 Verification
+    √ Recommendation strictly respects Multi-Track weight scaling (554 ms)
+    × Daily engine creates primary and secondary track plans (271 ms)
+
+  ● Multi-Track Adaptive Engine V2 Verification › Daily engine creates primary and secondary track plans
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "SECONDARY_TRACK"
+    Received array: ["APTITUDE", "DEV", "DEVOPS"]
+
+    [0m [90m 133 |[39m         [90m// Check the secondary block structure[39m
+     [90m 134 |[39m         [36mconst[39m sb [33m=[39m todayRes[33m.[39mbody[33m.[39mmeta[33m.[39msecondaryBlock[33m;[39m
+    [31m[1m>[22m[39m[90m 135 |[39m         expect([[32m'APTITUDE'[39m[33m,[39m [32m'DEV'[39m[33m,[39m [32m'DEVOPS'[39m])[33m.[39mtoContain(sb[33m.[39mtrack)[33m;[39m
+     [90m     |[39m                                               [31m[1m^[22m[39m
+     [90m 136 |[39m         expect(sb)[33m.[39mtoHaveProperty([32m'subject'[39m)[33m;[39m
+     [90m 137 |[39m         expect(sb)[33m.[39mtoHaveProperty([32m'topic'[39m)[33m;[39m
+     [90m 138 |[39m     })[33m;[39m[0m
+
+      at Object.toContain (tests/integration/multitrack.test.js:135:47)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 passed, 2 total
+Snapshots:   0 total
+Time:        3.41 s, estimated 4 s
+Ran all test suites matching /tests\\integration\\multitrack.test.js/i.

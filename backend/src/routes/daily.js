@@ -98,98 +98,109 @@ router.get('/today', authMiddleware, async (req, res) => {
 
             // We can't do random weighted selection purely in one agg pipeline easily without fetching all.
             // HYBRID APPROACH:
-            // 1. Facet to get counts of each bucket (Fast index scan if covered)
-            // 2. Roll dice to pick bucket.
-            // 3. $sample ONE document from that bucket.
+            const Track = require('../models/Track');
+            const Subject = require('../models/Subject');
 
-            const bucketCounts = await TopicMastery.aggregate([
-                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-                {
-                    $project: {
-                        bucket: {
-                            $switch: {
-                                branches: [
-                                    { case: { $lt: ['$mastery', 40] }, then: 'critical' },
-                                    { case: { $lt: ['$mastery', 60] }, then: 'weak' },
-                                    { case: { $lt: ['$mastery', 80] }, then: 'moderate' },
-                                    { case: { $lt: ['$mastery', 95] }, then: 'strong' }
-                                ],
-                                default: 'mastered'
-                            }
-                        }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$bucket',
-                        count: { $sum: 1 }
-                    }
-                }
+            // Find all subjects for DSA (Primary) and for Rotating Track (Secondary)
+            const todayDay = new Date().getDay(); // 0-6
+            // Rotate secondary track based on day of week. If 0/3 it's APTITUDE, if 1/4 DEV, if 2/5/6 DEVOPS.
+            let secondaryTrackName = 'APTITUDE';
+            if ([1, 4].includes(todayDay)) secondaryTrackName = 'DEV';
+            if ([2, 5, 6].includes(todayDay)) secondaryTrackName = 'DEVOPS';
+
+            const [dsaSubjects, secondarySubjects] = await Promise.all([
+                Subject.find({ track: { $in: ['DSA', null, ''] } }).lean(),
+                Subject.find({ track: secondaryTrackName }).lean()
             ]);
 
-            const map = { critical: 0, weak: 0, moderate: 0, strong: 0, mastered: 0 };
-            bucketCounts.forEach(b => map[b._id] = b.count);
+            const dsaSubjectNames = dsaSubjects.map(s => s.name);
+            const secSubjectNames = secondarySubjects.map(s => s.name);
 
-            // Determine Target Bucket
-            const rand = Math.random() * 100;
-            let targetBucket = 'critical';
+            // Fetch a topic specifically from the primary track (DSA) for the root plan
+            const getTopicFromPool = async (subjectNames, fallbackList) => {
+                if (subjectNames.length === 0) return fallbackList[0];
 
-            // Probabilities: Critical 35%, Weak 30%, Moderate 20%, Strong 10%, Mastered 5%
-            if (rand < 35 && map.critical) targetBucket = 'critical';
-            else if (rand < 65 && map.weak) targetBucket = 'weak';
-            else if (rand < 85 && map.moderate) targetBucket = 'moderate';
-            else if (rand < 95 && map.strong) targetBucket = 'strong';
-            else if (map.mastered) targetBucket = 'mastered';
-            else {
-                // Fallback to whatever exists
-                if (map.critical) targetBucket = 'critical';
-                else if (map.weak) targetBucket = 'weak';
-                else if (map.moderate) targetBucket = 'moderate';
-                else if (map.strong) targetBucket = 'strong';
-                else targetBucket = 'mastered';
-            }
-
-            // Fetch ONE topic from this bucket using $sample
-            let rangeBefore = 0;
-            let rangeAfter = 0;
-
-            switch (targetBucket) {
-                case 'critical': rangeBefore = 0; rangeAfter = 40; break;
-                case 'weak': rangeBefore = 40; rangeAfter = 60; break;
-                case 'moderate': rangeBefore = 60; rangeAfter = 80; break;
-                case 'strong': rangeBefore = 80; rangeAfter = 95; break;
-                case 'mastered': rangeBefore = 95; rangeAfter = 101; break;
-            }
-
-            // Optimization: If map[targetBucket] is 0, we might need a backup plan (handled by fallback logic above)
-            // But if ALL are 0 (New user?), we default to roadmap.
-
-            if (map[targetBucket] > 0) {
-                const samples = await TopicMastery.aggregate([
+                const bucketCounts = await TopicMastery.aggregate([
                     {
                         $match: {
                             userId: new mongoose.Types.ObjectId(userId),
-                            mastery: { $gte: rangeBefore, $lt: rangeAfter } // Use range
+                            subject: { $in: subjectNames }
                         }
                     },
-                    { $sample: { size: 1 } },
-                    { $project: { topic: 1, subject: 1 } }
+                    {
+                        $project: {
+                            bucket: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $lt: ['$mastery', 40] }, then: 'critical' },
+                                        { case: { $lt: ['$mastery', 60] }, then: 'weak' },
+                                        { case: { $lt: ['$mastery', 80] }, then: 'moderate' },
+                                        { case: { $lt: ['$mastery', 95] }, then: 'strong' }
+                                    ],
+                                    default: 'mastered'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$bucket',
+                            count: { $sum: 1 }
+                        }
+                    }
                 ]);
 
-                if (samples.length > 0) {
-                    targetTopicData = samples[0];
-                    targetTopicData.difficulty = 'Medium'; // Default
-                    selectionReason = `weighted_bucket_${targetBucket}`;
-                    console.log(`Adaptive: Selected ${targetTopicData.topic} from ${targetBucket} bucket.`);
-                }
-            }
+                const map = { critical: 0, weak: 0, moderate: 0, strong: 0, mastered: 0 };
+                bucketCounts.forEach(b => map[b._id] = b.count);
 
-            // Fallback for Cold Start or empty DB
-            if (!targetTopicData) {
-                // Check New Topics? (Not in DB)
-                // Just pick from Roadmap
-                targetTopicData = ROADMAP_TOPICS[0];
-            }
+                const rand = Math.random() * 100;
+                let targetBucket = 'critical';
+
+                if (rand < 35 && map.critical) targetBucket = 'critical';
+                else if (rand < 65 && map.weak) targetBucket = 'weak';
+                else if (rand < 85 && map.moderate) targetBucket = 'moderate';
+                else if (rand < 95 && map.strong) targetBucket = 'strong';
+                else if (map.mastered) targetBucket = 'mastered';
+                else targetBucket = Object.keys(map).find(k => map[k] > 0) || 'critical';
+
+                let rangeBefore = 0, rangeAfter = 0;
+                switch (targetBucket) {
+                    case 'critical': rangeBefore = 0; rangeAfter = 40; break;
+                    case 'weak': rangeBefore = 40; rangeAfter = 60; break;
+                    case 'moderate': rangeBefore = 60; rangeAfter = 80; break;
+                    case 'strong': rangeBefore = 80; rangeAfter = 95; break;
+                    case 'mastered': rangeBefore = 95; rangeAfter = 101; break;
+                }
+
+                if (map[targetBucket] > 0) {
+                    const samples = await TopicMastery.aggregate([
+                        {
+                            $match: {
+                                userId: new mongoose.Types.ObjectId(userId),
+                                subject: { $in: subjectNames },
+                                mastery: { $gte: rangeBefore, $lt: rangeAfter }
+                            }
+                        },
+                        { $sample: { size: 1 } },
+                        { $project: { topic: 1, subject: 1 } }
+                    ]);
+
+                    if (samples.length > 0) {
+                        return { ...samples[0], difficulty: 'Medium', bucket: targetBucket };
+                    }
+                }
+                return fallbackList[0];
+            };
+
+            // Calculate Primary (DSA)
+            targetTopicData = await getTopicFromPool(dsaSubjectNames, ROADMAP_TOPICS);
+            selectionReason = `weighted_bucket_primary_${targetTopicData.bucket || 'fallback'}`;
+            console.log(`Adaptive: Selected PRIMARY (DSA) ${targetTopicData.topic} from bucket.`);
+
+            // Expose a secondary block to the meta to satisfy Multi-Track
+            const secondaryTopicData = await getTopicFromPool(secSubjectNames, ROADMAP_TOPICS);
+            if (!secondaryTopicData.track) secondaryTopicData.track = secondaryTrackName;
+            req.__secondaryTopicData = secondaryTopicData; // Sneak it onto req to process later
         }
 
         // --- GENERATION / FETCHING ---
@@ -271,7 +282,12 @@ router.get('/today', authMiddleware, async (req, res) => {
             ...dailyConcept.toObject(),
             meta: {
                 selectionReason,
-                topic: targetTopicData.topic
+                topic: targetTopicData.topic,
+                secondaryBlock: req.__secondaryTopicData ? {
+                    topic: req.__secondaryTopicData.topic,
+                    subject: req.__secondaryTopicData.subject,
+                    track: req.__secondaryTopicData.track || 'SECONDARY_TRACK'
+                } : null
             }
         });
 

@@ -1,0 +1,77 @@
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (5) from ..\.env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+FAIL tests/integration/multitrack.test.js
+  Multi-Track Adaptive Engine V2 Verification
+    × Recommendation strictly respects Multi-Track weight scaling (243 ms)
+    × Daily engine creates primary and secondary track plans (114 ms)
+
+  ● Multi-Track Adaptive Engine V2 Verification › Recommendation strictly respects Multi-Track weight scaling
+
+    ValidationError: DailyConcept validation failed: codeExample.code: Path `codeExample.code` is required., codeExample.language: Path `codeExample.language` is required., summary: Path `summary` (`Mock summary`, length 12) is shorter than the minimum allowed length (50)., explanation: Path `explanation` (`Mock explanation Mock explanat...`, length 170) is shorter than the minimum allowed length (200).
+
+    [0m [90m 72 |[39m         [90m// Seed DailyConcepts to prevent live LLM generation during tests[39m
+     [90m 73 |[39m         [36mconst[39m [33mDailyConcept[39m [33m=[39m require([32m'../../src/models/DailyConcept'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 74 |[39m         [36mawait[39m [33mDailyConcept[39m[33m.[39mcreate({
+     [90m    |[39m         [31m[1m^[22m[39m
+     [90m 75 |[39m             topic[33m:[39m [32m'Variables'[39m[33m,[39m
+     [90m 76 |[39m             subject[33m:[39m [32m'Programming Basics'[39m[33m,[39m
+     [90m 77 |[39m             difficulty[33m:[39m [32m'Easy'[39m[33m,[39m[0m
+
+      at model.Object.<anonymous>.Document.invalidate (node_modules/mongoose/lib/document.js:3405:32)
+      at validatePath (node_modules/mongoose/lib/document.js:3177:13)
+          at async Promise.all (index 0)
+      at model.$__validate (node_modules/mongoose/lib/document.js:3118:3)
+      at model.validate (node_modules/mongoose/lib/document.js:2687:5)
+      at model.validateBeforeSavePreSave (node_modules/mongoose/lib/plugins/validateBeforeSave.js:39:5)
+      at Kareem.execPre (node_modules/kareem/index.js:70:24)
+      at model.$__save (node_modules/mongoose/lib/model.js:371:5)
+      at model.save (node_modules/mongoose/lib/model.js:614:5)
+      at node_modules/mongoose/lib/model.js:2750:9
+          at async Promise.all (index 0)
+      at Function.create (node_modules/mongoose/lib/model.js:2735:11)
+      at Object.<anonymous> (tests/integration/multitrack.test.js:74:9)
+
+  ● Multi-Track Adaptive Engine V2 Verification › Daily engine creates primary and secondary track plans
+
+    ValidationError: DailyConcept validation failed: codeExample.code: Path `codeExample.code` is required., codeExample.language: Path `codeExample.language` is required., summary: Path `summary` (`Mock summary`, length 12) is shorter than the minimum allowed length (50)., explanation: Path `explanation` (`Mock explanation Mock explanat...`, length 170) is shorter than the minimum allowed length (200).
+
+    [0m [90m 72 |[39m         [90m// Seed DailyConcepts to prevent live LLM generation during tests[39m
+     [90m 73 |[39m         [36mconst[39m [33mDailyConcept[39m [33m=[39m require([32m'../../src/models/DailyConcept'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 74 |[39m         [36mawait[39m [33mDailyConcept[39m[33m.[39mcreate({
+     [90m    |[39m         [31m[1m^[22m[39m
+     [90m 75 |[39m             topic[33m:[39m [32m'Variables'[39m[33m,[39m
+     [90m 76 |[39m             subject[33m:[39m [32m'Programming Basics'[39m[33m,[39m
+     [90m 77 |[39m             difficulty[33m:[39m [32m'Easy'[39m[33m,[39m[0m
+
+      at model.Object.<anonymous>.Document.invalidate (node_modules/mongoose/lib/document.js:3405:32)
+      at validatePath (node_modules/mongoose/lib/document.js:3177:13)
+          at async Promise.all (index 0)
+      at model.$__validate (node_modules/mongoose/lib/document.js:3118:3)
+      at model.validate (node_modules/mongoose/lib/document.js:2687:5)
+      at model.validateBeforeSavePreSave (node_modules/mongoose/lib/plugins/validateBeforeSave.js:39:5)
+      at Kareem.execPre (node_modules/kareem/index.js:70:24)
+      at model.$__save (node_modules/mongoose/lib/model.js:371:5)
+      at model.save (node_modules/mongoose/lib/model.js:614:5)
+      at node_modules/mongoose/lib/model.js:2750:9
+          at async Promise.all (index 0)
+      at Function.create (node_modules/mongoose/lib/model.js:2735:11)
+      at Object.<anonymous> (tests/integration/multitrack.test.js:74:9)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 total
+Snapshots:   0 total
+Time:        2.316 s, estimated 3 s
+Ran all test suites matching /tests\\integration\\multitrack.test.js/i.

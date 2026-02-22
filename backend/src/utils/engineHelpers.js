@@ -40,20 +40,29 @@ const evaluateUnlockState = (topics, masteryMap) => {
 
 /**
  * Pure helper for recommendation tie-breaking logic.
+ * Incorporates Track Weights: effective mastery = (real mastery) / (track weight).
+ * Higher track weight lowers the effective mastery, making it "weaker" and prioritized.
  * @param {Array} subjects - List of subject mastery objects.
- * @returns {Array} - Sorted list based on Weakest Domain Philosophy.
+ * @param {Object} trackWeights - Map of { trackName: weightNumber }
+ * @returns {Array} - Sorted list prioritizing heavily weighted, weak subjects.
  */
-const sortSubjectsByWeakness = (subjects) => {
+const sortSubjectsByWeakness = (subjects, trackWeights = {}) => {
     return [...subjects].sort((a, b) => {
-        const masteryA = a.averageMastery ?? 0;
-        const masteryB = b.averageMastery ?? 0;
-        if (masteryA !== masteryB) return masteryA - masteryB;
+        const weightA = trackWeights[a.track || 'DSA'] || 1.0;
+        const weightB = trackWeights[b.track || 'DSA'] || 1.0;
+
+        // Effective mastery is artificially reduced for high-weight tracks
+        // making them appear "weaker" to the recommendation engine.
+        const effMasteryA = (a.averageMastery ?? 0) / weightA;
+        const effMasteryB = (b.averageMastery ?? 0) / weightB;
+
+        if (effMasteryA !== effMasteryB) return effMasteryA - effMasteryB;
 
         const attemptsA = a.totalAttempts ?? 0;
         const attemptsB = b.totalAttempts ?? 0;
         if (attemptsA !== attemptsB) return attemptsA - attemptsB;
 
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
     });
 };
 

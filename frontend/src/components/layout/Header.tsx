@@ -9,7 +9,8 @@ import {
     Settings,
     LogOut,
     Menu,
-    ClipboardList
+    ClipboardList,
+    BarChart2
 } from 'lucide-react';
 
 
@@ -22,6 +23,7 @@ export const Header: React.FC = () => {
         { label: 'Curriculum', path: '/curriculum', icon: BookOpen },
         { label: 'Progress', path: '/progress', icon: LayoutDashboard },
         { label: 'Mock', path: '/mock', icon: ClipboardList },
+        { label: 'Analytics', path: '/analytics', icon: BarChart2 },
     ];
 
     return (

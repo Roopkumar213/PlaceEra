@@ -1,0 +1,73 @@
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (5) from ..\.env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+FAIL tests/integration/multitrack.test.js (11.879 s)
+  ● Multi-Track Adaptive Engine V2 Verification › Recommendation strictly respects Multi-Track weight scaling
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 14 |[39m     [36mlet[39m userId[33m;[39m
+     [90m 15 |[39m
+    [31m[1m>[22m[39m[90m 16 |[39m     beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 17 |[39m         [36mif[39m (mongoose[33m.[39mconnection[33m.[39mreadyState [33m===[39m [35m0[39m) {
+     [90m 18 |[39m             [36mawait[39m mongoose[33m.[39mconnect(process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m||[39m [32m'mongodb://127.0.0.1:27017/adaptive_test_mt'[39m)[33m;[39m
+     [90m 19 |[39m         }[0m
+
+      at beforeAll (tests/integration/multitrack.test.js:16:5)
+      at Object.describe (tests/integration/multitrack.test.js:12:1)
+
+  ● Multi-Track Adaptive Engine V2 Verification › Daily engine creates primary and secondary track plans
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 14 |[39m     [36mlet[39m userId[33m;[39m
+     [90m 15 |[39m
+    [31m[1m>[22m[39m[90m 16 |[39m     beforeAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 17 |[39m         [36mif[39m (mongoose[33m.[39mconnection[33m.[39mreadyState [33m===[39m [35m0[39m) {
+     [90m 18 |[39m             [36mawait[39m mongoose[33m.[39mconnect(process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m||[39m [32m'mongodb://127.0.0.1:27017/adaptive_test_mt'[39m)[33m;[39m
+     [90m 19 |[39m         }[0m
+
+      at beforeAll (tests/integration/multitrack.test.js:16:5)
+      at Object.describe (tests/integration/multitrack.test.js:12:1)
+
+
+  ● Test suite failed to run
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 63 |[39m     })[33m;[39m
+     [90m 64 |[39m
+    [31m[1m>[22m[39m[90m 65 |[39m     afterAll([36masync[39m () [33m=>[39m {
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 66 |[39m         [36mawait[39m mongoose[33m.[39mconnection[33m.[39mclose()[33m;[39m
+     [90m 67 |[39m     })[33m;[39m
+     [90m 68 |[39m[0m
+
+      at afterAll (tests/integration/multitrack.test.js:65:5)
+      at Object.describe (tests/integration/multitrack.test.js:12:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 total
+Snapshots:   0 total
+Time:        11.96 s, estimated 13 s
+Ran all test suites matching /tests\\integration\\multitrack.test.js/i.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.
