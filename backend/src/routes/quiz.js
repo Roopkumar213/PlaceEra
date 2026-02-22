@@ -175,10 +175,13 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 await SubjectMastery.findOneAndUpdate(
                     { userId, subject: lesson.subject },
                     {
-                        averageMastery: avgMastery,
-                        totalTopics: totalAttempted,
-                        masteredTopics: masteredCount,
-                        lastUpdated: Date.now()
+                        $set: {
+                            averageMastery: avgMastery,
+                            totalTopics: totalAttempted,
+                            masteredTopics: masteredCount,
+                            lastUpdated: Date.now()
+                        },
+                        $inc: { totalAttempts: 1 }
                     },
                     { upsert: true, session }
                 );

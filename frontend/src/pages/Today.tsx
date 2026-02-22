@@ -34,8 +34,12 @@ const Today: React.FC = () => {
         setError('');
         try {
             const token = localStorage.getItem('token');
+            const searchParams = new URLSearchParams(window.location.search);
+            const topic = searchParams.get('topic');
+
             const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/today`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
+                params: topic ? { topic } : {}
             });
             setLesson(response.data);
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const DailyConcept = require('../models/DailyConcept');
 const AdminReview = require('../models/AdminReview');
 const TopicMastery = require('../models/TopicMastery');
+const Topic = require('../models/Topic');
 const mongoose = require('mongoose');
 const RevisionQueue = require('../models/RevisionQueue');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -29,6 +30,7 @@ const ROADMAP_TOPICS = [
 router.get('/today', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
+        const requestedTopic = req.query.topic;
 
         // 1. Check if DailyConcept already exists for today (Global or Personal?)
         // The original design seemed global (one lesson for everyone).
@@ -42,21 +44,31 @@ router.get('/today', authMiddleware, async (req, res) => {
         // 2. Look for existing DailyConcept for that topic.
         // 3. If none, generate one.
 
-        // --- ADAPTIVE SELECTION ENGINE ---
+        // --- SELECTION ENGINE ---
         let targetTopicData = null;
-        let selectionReason = 'adaptive_rotation';
+        let selectionReason = requestedTopic ? 'targeted_practice' : 'adaptive_rotation';
 
-        // A. Revision Queue (Priority 1)
-        const revisionItem = await RevisionQueue.findOne({
-            userId,
-            resolved: false,
-            scheduledFor: { $lte: new Date() }
-        }).sort({ priorityScore: -1 });
+        if (requestedTopic) {
+            const topicInfo = await Topic.findOne({ name: requestedTopic });
+            targetTopicData = {
+                topic: requestedTopic,
+                subject: topicInfo ? topicInfo.subject : 'General',
+                difficulty: 'Medium' // Default difficulty for targeted practice
+            };
+            console.log(`Targeted: Selected ${targetTopicData.topic} based on user request.`);
+        } else {
+            // A. Revision Queue (Priority 1)
+            const revisionItem = await RevisionQueue.findOne({
+                userId,
+                resolved: false,
+                scheduledFor: { $lte: new Date() }
+            }).sort({ priorityScore: -1 });
 
-        if (revisionItem) {
-            targetTopicData = { topic: revisionItem.topic, subject: revisionItem.subject, difficulty: 'Medium' };
-            selectionReason = 'revision_queue';
-            console.log(`Adaptive: Selected ${targetTopicData.topic} from Revision Queue.`);
+            if (revisionItem) {
+                targetTopicData = { topic: revisionItem.topic, subject: revisionItem.subject, difficulty: 'Medium' };
+                selectionReason = 'revision_queue';
+                console.log(`Adaptive: Selected ${targetTopicData.topic} from Revision Queue.`);
+            }
         }
 
         // B. Forced Resurfacing (Priority 2)

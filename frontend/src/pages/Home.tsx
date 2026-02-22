@@ -19,34 +19,51 @@ interface DashboardStats {
     firstRecommendedTopic: { topic: string; subject: string; mastery: number } | null;
 }
 
+interface Recommendation {
+    subjectId: string;
+    topicId: string;
+    subjectReadiness: number;
+    topicMastery: number;
+    status: string;
+    reason: string;
+}
+
 const Home: React.FC = () => {
     const { user } = useAuth();
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchDashboardData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/progress/dashboard`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setStats(res.data);
+
+                const [statsRes, recoRes] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/progress/dashboard`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/recommendation`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }).catch(() => ({ data: null })) // Graceful fail if no recommendation
+                ]);
+
+                setStats(statsRes.data);
+                setRecommendation(recoRes.data);
             } catch (err) {
-                console.error("Failed to fetch dashboard stats", err);
+                console.error("Failed to fetch dashboard data", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchStats();
+        fetchDashboardData();
     }, []);
 
     const isLoading = loading || !stats;
 
     return (
         <PageContainer>
-            {/* Hero Section */}
             <section className="flex flex-col items-start gap-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-24">
                 <Badge variant="secondary" className="mb-2">
                     System v2.1 Online
@@ -102,8 +119,61 @@ const Home: React.FC = () => {
                 </Card>
             )}
 
-            {/* Day 1 Experience: Start Here Card */}
-            {!isLoading && user?.onboardingComplete && stats.isFirstSession && (
+            {/* Today's Focus: Intelligent Recommendation Card */}
+            {!isLoading && user?.onboardingComplete && recommendation && (
+                <Card className="border-primary/50 bg-primary/5 mb-8 overflow-hidden relative shadow-lg">
+                    <div className="absolute -top-6 -right-6 p-4 opacity-5 rotate-12">
+                        <Trophy size={160} />
+                    </div>
+                    <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                            <CardTitle className="flex items-center gap-2">
+                                <Target className="text-primary" />
+                                Today's Focus
+                            </CardTitle>
+                            <Badge variant="outline" className="border-primary/50 text-primary">
+                                {recommendation.reason}
+                            </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                            <div className="flex-1 space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Subject</p>
+                                        <p className="font-semibold">{recommendation.subjectId}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Topic</p>
+                                        <p className="font-semibold">{recommendation.topicId}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Topic Mastery</p>
+                                        <p className="font-semibold text-primary">{Math.round(recommendation.topicMastery)}%</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Subject Readiness</p>
+                                        <p className="font-semibold text-orange-500">{Math.round(recommendation.subjectReadiness)}%</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground italic">
+                                    This topic is prioritized because it belongs to your weakest domain. Improving this will yield the highest lift to your overall readiness.
+                                </p>
+                            </div>
+                            <Link to={`/today?topic=${encodeURIComponent(recommendation.topicId)}`}>
+                                <Button size="lg" className="group shadow-md px-8 py-6 h-auto text-lg">
+                                    Start Practice
+                                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Day 1 Experience: Start Here Card (Only if recommendation not shown or redundant) */}
+            {!isLoading && user?.onboardingComplete && stats.isFirstSession && !recommendation && (
                 <Card className="border-primary/50 bg-primary/5 mb-8 overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Zap size={120} />
