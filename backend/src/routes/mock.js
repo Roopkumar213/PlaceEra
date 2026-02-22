@@ -300,6 +300,12 @@ router.post('/submit', auth, submissionLimiter, validateBody(mockSubmitSchema), 
             );
         });
 
+        // 🔥 Behavioral Intelligence: update streak + state (non-blocking)
+        const { updateStreakAndBehavior } = require('../services/behaviorService');
+        updateStreakAndBehavior(userId).catch(err =>
+            console.error('[BehaviorService] Non-blocking update failed:', err.message)
+        );
+
         res.json({
             message: 'Mock test processed successfully.',
             summary: {

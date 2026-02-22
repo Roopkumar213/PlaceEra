@@ -56,8 +56,10 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
         const { initializeUserMasteryIfEmpty } = require('../services/masteryService');
         await initializeUserMasteryIfEmpty(userId);
 
+        const { getBehavioralSummary } = require('../services/behaviorService');
+
         // Parallel fetch for perf
-        const [streak, weakTopics, totalLessons, recentActivity, firstRecommendedTopic, hasStartedLearning] = await Promise.all([
+        const [streak, weakTopics, totalLessons, recentActivity, firstRecommendedTopic, hasStartedLearning, behavior] = await Promise.all([
             calculateStreak(userId),
             TopicMastery.find({ userId }).sort({ mastery: 1 }).limit(3),
             UserProgress.countDocuments({ userId }),
@@ -72,7 +74,8 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
                     { lastAttemptAt: { $ne: null } },
                     { mastery: { $gt: 5 } }
                 ]
-            })
+            }),
+            getBehavioralSummary(userId)
         ]);
 
         res.json({
@@ -81,7 +84,13 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             weakTopics,
             recentActivity,
             firstRecommendedTopic,
-            isFirstSession: !hasStartedLearning
+            isFirstSession: !hasStartedLearning,
+            behavior: behavior ?? {
+                streakDays: streak,
+                behavioralState: 'OPTIMAL',
+                behavioralMeta: {},
+                velocityHistory: []
+            }
         });
     } catch (err) {
         console.error('Dashboard Error:', err);

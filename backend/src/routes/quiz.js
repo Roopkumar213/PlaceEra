@@ -280,6 +280,12 @@ router.post('/submit', authMiddleware, submissionLimiter, validateBody(quizSubmi
             });
         }
 
+        // 🔥 Behavioral Intelligence: update streak and detect state (non-blocking)
+        const { updateStreakAndBehavior } = require('../services/behaviorService');
+        updateStreakAndBehavior(userId).catch(err =>
+            console.error('[BehaviorService] Non-blocking update failed:', err.message)
+        );
+
         res.json(finalResult);
 
     } catch (err) {
