@@ -21,6 +21,16 @@ const UserSchema = new mongoose.Schema({
   lastNotificationDate: { type: Date },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  emailPreferences: {
+    enabled: { type: Boolean, default: false },
+    preferredTime: { type: String, default: '09:00' },
+    frequency: { type: String, enum: ['DAILY', 'WEEKDAYS'], default: 'DAILY' },
+    timezone: { type: String, default: 'UTC' }
+  },
+  notificationPreferences: {
+    browser: { type: Boolean, default: false }
+  },
+  lastEmailSentAt: { type: Date, default: null }
 }, { timestamps: true });
 
 // Email index is automatically created by unique: true

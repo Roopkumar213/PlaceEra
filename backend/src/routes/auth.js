@@ -247,22 +247,71 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // PUT /api/auth/onboarding
-// Marks onboarding as complete and updates initial preferences
+// Marks onboarding as complete and updates preferences
 router.put('/onboarding', auth, async (req, res) => {
     try {
-        const { timezone, preferredTimes, onceOrTwice } = req.body;
+        const { timezone, emailPreferences, notificationPreferences } = req.body;
 
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         if (timezone) user.timezone = timezone;
-        if (preferredTimes) user.preferredTimes = preferredTimes;
-        if (onceOrTwice) user.onceOrTwice = onceOrTwice;
+
+        // Initialize preferences from onboarding
+        if (emailPreferences) {
+            user.emailPreferences = {
+                ...user.emailPreferences,
+                ...emailPreferences,
+                timezone: timezone || user.timezone
+            };
+        }
+        if (notificationPreferences) {
+            user.notificationPreferences = {
+                ...user.notificationPreferences,
+                ...notificationPreferences
+            };
+        }
 
         user.onboardingComplete = true;
         await user.save();
 
         res.json({ message: 'Onboarding complete', user: { id: user.id, onboardingComplete: true } });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// PUT /api/auth/settings
+// Updates user preferences
+router.put('/settings', auth, async (req, res) => {
+    try {
+        const { emailPreferences, notificationPreferences } = req.body;
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (emailPreferences) {
+            user.emailPreferences = {
+                ...user.emailPreferences,
+                ...emailPreferences
+            };
+        }
+        if (notificationPreferences) {
+            user.notificationPreferences = {
+                ...user.notificationPreferences,
+                ...notificationPreferences
+            };
+        }
+
+        await user.save();
+
+        res.json({
+            message: 'Settings updated', user: {
+                emailPreferences: user.emailPreferences,
+                notificationPreferences: user.notificationPreferences
+            }
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

@@ -65,8 +65,8 @@ async function generateLesson(topic, subject, difficulty) {
         }
 
     } catch (error) {
-        console.error('LLM Service Error:', error.message);
-        throw error;
+        console.error('LLM Service Error, falling back to mock response:', error.message);
+        return getMockLesson(topic, subject, difficulty);
     }
 }
 
