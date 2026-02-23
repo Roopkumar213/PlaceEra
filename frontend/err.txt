@@ -1,0 +1,4 @@
+Command failed: npx tsc -b
+src/pages/Consistency.tsx(5,16): error TS6133: 'CardHeader' is declared but its value is never read.
+src/pages/Consistency.tsx(5,28): error TS6133: 'CardTitle' is declared but its value is never read.
+

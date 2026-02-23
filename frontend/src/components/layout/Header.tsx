@@ -10,7 +10,8 @@ import {
     LogOut,
     Menu,
     ClipboardList,
-    BarChart2
+    BarChart2,
+    Flame
 } from 'lucide-react';
 
 
@@ -22,6 +23,7 @@ export const Header: React.FC = () => {
         { label: 'Today', path: '/today', icon: Target },
         { label: 'Curriculum', path: '/curriculum', icon: BookOpen },
         { label: 'Progress', path: '/progress', icon: LayoutDashboard },
+        { label: 'Consistency', path: '/consistency', icon: Flame },
         { label: 'Mock', path: '/mock', icon: ClipboardList },
         { label: 'Analytics', path: '/analytics', icon: BarChart2 },
     ];

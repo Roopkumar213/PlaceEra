@@ -41,7 +41,6 @@ export const QuizPanel: React.FC<QuizPanelProps> = ({ quizId, questions, onCompl
     const [showResults, setShowResults] = useState(false);
     const [result, setResult] = useState<QuizResult | null>(null);
     const [answers, setAnswers] = useState<Record<number, string>>({});
-    const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
 
     const handleOptionSelect = (index: number) => {
         if (isSubmitted) return;
@@ -99,7 +98,6 @@ export const QuizPanel: React.FC<QuizPanelProps> = ({ quizId, questions, onCompl
         } catch (error: any) {
             if (error.response?.status === 429) {
                 // Rate limited — start cooldown
-                setRateLimitCooldown(900);
                 setResult({ rateLimited: true });
             } else {
                 console.error("Failed to submit quiz (network). Queuing for sync.", error);

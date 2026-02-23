@@ -120,4 +120,45 @@ router.get('/readiness', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/progress/consistency
+router.get('/consistency', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const LearningEventLog = require('../models/LearningEventLog');
+        const mongoose = require('mongoose');
+
+        const events = await LearningEventLog.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    eventType: { $in: ['QUIZ_SUBMIT', 'MOCK_COMPLETED'] },
+                    timestamp: { $gte: oneYearAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+                    count: { $sum: 1 },
+                    avgDelta: { $avg: { $abs: "$delta" } }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const fullYearStats = events.map(e => ({
+            date: e._id,
+            count: e.count || 0,
+            avgDelta: e.avgDelta || 0
+        }));
+
+        res.json({ fullYearStats });
+    } catch (err) {
+        console.error('Consistency Error:', err);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 module.exports = router;
