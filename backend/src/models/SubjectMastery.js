@@ -11,6 +11,15 @@ const subjectMasterySchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    track: {
+        type: String,
+        enum: ['DSA', 'APTITUDE', 'DEV', 'DEVOPS'],
+        default: 'DSA'
+    },
+    cluster: {
+        type: String,
+        default: ''
+    },
     averageMastery: {
         type: Number,
         default: 0,

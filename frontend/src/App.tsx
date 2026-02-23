@@ -13,8 +13,10 @@ import Home from './pages/Home';
 import Today from './pages/Today';
 import Curriculum from './pages/Curriculum';
 import Progress from './pages/Progress';
+import Consistency from './pages/Consistency';
 import MockHistory from './pages/MockHistory';
 import MockPerformanceReport from './pages/MockPerformanceReport';
+import UserAnalyticsDashboard from './pages/UserAnalyticsDashboard';
 
 function App() {
   return (
@@ -33,8 +35,10 @@ function App() {
             <Route path="/today" element={<Today />} />
             <Route path="/curriculum" element={<Curriculum />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/consistency" element={<Consistency />} />
             <Route path="/mock" element={<MockHistory />} />
             <Route path="/mock/report" element={<MockPerformanceReport />} />
+            <Route path="/analytics" element={<UserAnalyticsDashboard />} />
             <Route path="/settings" element={<div className="p-8">Settings (Coming Soon)</div>} />
           </Route>
         </Route>

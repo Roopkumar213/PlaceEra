@@ -37,7 +37,7 @@ const Today: React.FC = () => {
             const searchParams = new URLSearchParams(window.location.search);
             const topic = searchParams.get('topic');
 
-            const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/today`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/daily/session`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: topic ? { topic } : {}
             });

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const DailySession = require('../models/DailySession');
 const DailyConcept = require('../models/DailyConcept');
 const AdminReview = require('../models/AdminReview');
 const TopicMastery = require('../models/TopicMastery');
@@ -8,10 +9,9 @@ const mongoose = require('mongoose');
 const RevisionQueue = require('../models/RevisionQueue');
 const authMiddleware = require('../middleware/authMiddleware');
 const { generateLesson } = require('../services/llmService');
-const { validateLesson } = require('../utils/validateLesson');
+const { computeBehavioralState } = require('../services/behaviorService');
+const User = require('../models/User');
 
-// Hardcoded roadmap topics for now since no Roadmap model exists
-// In a real system, we'd fetch from a Roadmap collection or similar.
 const ROADMAP_TOPICS = [
     { topic: 'Variables', subject: 'Programming Basics', difficulty: 'Easy' },
     { topic: 'Loops', subject: 'Programming Basics', difficulty: 'Easy' },
@@ -24,54 +24,40 @@ const ROADMAP_TOPICS = [
 ];
 
 /**
- * GET /api/today
- * Retrieves or generates the daily lesson using Adaptive Intelligence.
+ * GET /daily/session
+ * Replaces /daily/topic and /daily/questions
  */
-router.get('/today', authMiddleware, async (req, res) => {
+router.get('/daily/session', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
-        const requestedTopic = req.query.topic;
+        const user = await User.findById(userId);
+        const timezone = user?.timezone || 'UTC';
 
-        // 1. Check if DailyConcept already exists for today (Global or Personal?)
-        // The original design seemed global (one lesson for everyone).
-        // But "Adaptive" implies personalized. 
-        // If we generate a lesson for "Arrays" but the user needs "Variables", we can't share.
-        // So we strictly look for a personalized DailyConcept OR we just generate/fetch a concept for the target topic.
-        // Let's assume we can reuse concepts if they exist for the topic, regardless of date.
+        // Timezone aware date string
+        const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
-        // Strategy:
-        // 1. Determine Target Topic for User.
-        // 2. Look for existing DailyConcept for that topic.
-        // 3. If none, generate one.
+        let session = await DailySession.findOne({ userId, dateString: todayStr });
+        if (session) {
+            return res.json(session);
+        }
 
         // --- SELECTION ENGINE ---
         let targetTopicData = null;
-        let selectionReason = requestedTopic ? 'targeted_practice' : 'adaptive_rotation';
+        let selectionReason = 'adaptive_rotation';
 
-        if (requestedTopic) {
-            const topicInfo = await Topic.findOne({ name: requestedTopic });
-            targetTopicData = {
-                topic: requestedTopic,
-                subject: topicInfo ? topicInfo.subject : 'General',
-                difficulty: 'Medium' // Default difficulty for targeted practice
-            };
-            console.log(`Targeted: Selected ${targetTopicData.topic} based on user request.`);
-        } else {
-            // A. Revision Queue (Priority 1)
-            const revisionItem = await RevisionQueue.findOne({
-                userId,
-                resolved: false,
-                scheduledFor: { $lte: new Date() }
-            }).sort({ priorityScore: -1 });
+        // A. Revision Queue
+        const revisionItem = await RevisionQueue.findOne({
+            userId,
+            resolved: false,
+            scheduledFor: { $lte: new Date() }
+        }).sort({ priorityScore: -1 });
 
-            if (revisionItem) {
-                targetTopicData = { topic: revisionItem.topic, subject: revisionItem.subject, difficulty: 'Medium' };
-                selectionReason = 'revision_queue';
-                console.log(`Adaptive: Selected ${targetTopicData.topic} from Revision Queue.`);
-            }
+        if (revisionItem) {
+            targetTopicData = { topic: revisionItem.topic, subject: revisionItem.subject, difficulty: 'Medium' };
+            selectionReason = 'revision_queue';
         }
 
-        // B. Forced Resurfacing (Priority 2)
+        // B. Forced Resurfacing
         if (!targetTopicData) {
             const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
             const staleMaster = await TopicMastery.findOne({
@@ -83,200 +69,131 @@ router.get('/today', authMiddleware, async (req, res) => {
             if (staleMaster) {
                 targetTopicData = { topic: staleMaster.topic, subject: staleMaster.subject, difficulty: 'Hard' };
                 selectionReason = 'forced_resurfacing';
-                console.log(`Adaptive: Selected ${targetTopicData.topic} for Forced Resurfacing.`);
             }
         }
 
-        // C. Weighted Buckets (Priority 3) — OPTIMIZED AGGREGATION
-        // C. Weighted Buckets (Priority 3) — OPTIMIZED AGGREGATION
+        // C. Weighted Buckets
         if (!targetTopicData) {
-            // Aggregation to Select Topic with weighted bias directly.
-            // 1. Label Buckets
-            // 2. Sample from each bucket? 
-            // Better: Get counts, decide bucket validity, then query specific bucket.
-            // Querying all topics just to bucket them is still expensive (100k items).
+            const Track = require('../models/Track');
+            const Subject = require('../models/Subject');
 
-            // We can't do random weighted selection purely in one agg pipeline easily without fetching all.
-            // HYBRID APPROACH:
-            // 1. Facet to get counts of each bucket (Fast index scan if covered)
-            // 2. Roll dice to pick bucket.
-            // 3. $sample ONE document from that bucket.
+            const dsaSubjects = await Subject.find({ track: { $in: ['DSA', null, ''] } }).lean();
+            const dsaSubjectNames = dsaSubjects.map(s => s.name);
 
-            const bucketCounts = await TopicMastery.aggregate([
-                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-                {
-                    $project: {
-                        bucket: {
-                            $switch: {
-                                branches: [
-                                    { case: { $lt: ['$mastery', 40] }, then: 'critical' },
-                                    { case: { $lt: ['$mastery', 60] }, then: 'weak' },
-                                    { case: { $lt: ['$mastery', 80] }, then: 'moderate' },
-                                    { case: { $lt: ['$mastery', 95] }, then: 'strong' }
-                                ],
-                                default: 'mastered'
+            const getTopicFromPool = async (subjectNames, fallbackList) => {
+                if (subjectNames.length === 0) return fallbackList[0];
+
+                const bucketCounts = await TopicMastery.aggregate([
+                    { $match: { userId: new mongoose.Types.ObjectId(userId), subject: { $in: subjectNames } } },
+                    {
+                        $project: {
+                            bucket: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $lt: ['$mastery', 40] }, then: 'critical' },
+                                        { case: { $lt: ['$mastery', 60] }, then: 'weak' },
+                                        { case: { $lt: ['$mastery', 80] }, then: 'moderate' },
+                                        { case: { $lt: ['$mastery', 95] }, then: 'strong' }
+                                    ], default: 'mastered'
+                                }
                             }
                         }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$bucket',
-                        count: { $sum: 1 }
-                    }
-                }
-            ]);
-
-            const map = { critical: 0, weak: 0, moderate: 0, strong: 0, mastered: 0 };
-            bucketCounts.forEach(b => map[b._id] = b.count);
-
-            // Determine Target Bucket
-            const rand = Math.random() * 100;
-            let targetBucket = 'critical';
-
-            // Probabilities: Critical 35%, Weak 30%, Moderate 20%, Strong 10%, Mastered 5%
-            if (rand < 35 && map.critical) targetBucket = 'critical';
-            else if (rand < 65 && map.weak) targetBucket = 'weak';
-            else if (rand < 85 && map.moderate) targetBucket = 'moderate';
-            else if (rand < 95 && map.strong) targetBucket = 'strong';
-            else if (map.mastered) targetBucket = 'mastered';
-            else {
-                // Fallback to whatever exists
-                if (map.critical) targetBucket = 'critical';
-                else if (map.weak) targetBucket = 'weak';
-                else if (map.moderate) targetBucket = 'moderate';
-                else if (map.strong) targetBucket = 'strong';
-                else targetBucket = 'mastered';
-            }
-
-            // Fetch ONE topic from this bucket using $sample
-            let rangeBefore = 0;
-            let rangeAfter = 0;
-
-            switch (targetBucket) {
-                case 'critical': rangeBefore = 0; rangeAfter = 40; break;
-                case 'weak': rangeBefore = 40; rangeAfter = 60; break;
-                case 'moderate': rangeBefore = 60; rangeAfter = 80; break;
-                case 'strong': rangeBefore = 80; rangeAfter = 95; break;
-                case 'mastered': rangeBefore = 95; rangeAfter = 101; break;
-            }
-
-            // Optimization: If map[targetBucket] is 0, we might need a backup plan (handled by fallback logic above)
-            // But if ALL are 0 (New user?), we default to roadmap.
-
-            if (map[targetBucket] > 0) {
-                const samples = await TopicMastery.aggregate([
-                    {
-                        $match: {
-                            userId: new mongoose.Types.ObjectId(userId),
-                            mastery: { $gte: rangeBefore, $lt: rangeAfter } // Use range
-                        }
                     },
-                    { $sample: { size: 1 } },
-                    { $project: { topic: 1, subject: 1 } }
+                    { $group: { _id: '$bucket', count: { $sum: 1 } } }
                 ]);
 
-                if (samples.length > 0) {
-                    targetTopicData = samples[0];
-                    targetTopicData.difficulty = 'Medium'; // Default
-                    selectionReason = `weighted_bucket_${targetBucket}`;
-                    console.log(`Adaptive: Selected ${targetTopicData.topic} from ${targetBucket} bucket.`);
-                }
-            }
+                const map = { critical: 0, weak: 0, moderate: 0, strong: 0, mastered: 0 };
+                bucketCounts.forEach(b => map[b._id] = b.count);
 
-            // Fallback for Cold Start or empty DB
-            if (!targetTopicData) {
-                // Check New Topics? (Not in DB)
-                // Just pick from Roadmap
-                targetTopicData = ROADMAP_TOPICS[0];
-            }
+                const rand = Math.random() * 100;
+                let targetBucket = 'critical';
+
+                if (rand < 35 && map.critical) targetBucket = 'critical';
+                else if (rand < 65 && map.weak) targetBucket = 'weak';
+                else if (rand < 85 && map.moderate) targetBucket = 'moderate';
+                else if (rand < 95 && map.strong) targetBucket = 'strong';
+                else if (map.mastered) targetBucket = 'mastered';
+                else targetBucket = Object.keys(map).find(k => map[k] > 0) || 'critical';
+
+                let rangeBefore = 0, rangeAfter = 0;
+                switch (targetBucket) {
+                    case 'critical': rangeBefore = 0; rangeAfter = 40; break;
+                    case 'weak': rangeBefore = 40; rangeAfter = 60; break;
+                    case 'moderate': rangeBefore = 60; rangeAfter = 80; break;
+                    case 'strong': rangeBefore = 80; rangeAfter = 95; break;
+                    case 'mastered': rangeBefore = 95; rangeAfter = 101; break;
+                }
+
+                if (map[targetBucket] > 0) {
+                    const samples = await TopicMastery.aggregate([
+                        { $match: { userId: new mongoose.Types.ObjectId(userId), subject: { $in: subjectNames }, mastery: { $gte: rangeBefore, $lt: rangeAfter } } },
+                        { $sample: { size: 1 } },
+                        { $project: { topic: 1, subject: 1 } }
+                    ]);
+                    if (samples.length > 0) return { ...samples[0], difficulty: 'Medium', bucket: targetBucket };
+                }
+                return fallbackList[0];
+            };
+
+            targetTopicData = await getTopicFromPool(dsaSubjectNames, ROADMAP_TOPICS);
+            selectionReason = `weighted_bucket_primary_${targetTopicData.bucket || 'fallback'}`;
         }
 
-        // --- GENERATION / FETCHING ---
-        // Try to find a recent concept for this topic (reuse efficiently)
-        // logic: find one created in last 24h? Or just any? 
-        // A "Daily Concept" technically refreshes daily. 
-        // Let's find *any* existing DailyConcept for this topic to save LLM costs, 
-        // OR generate new if we want fresh content every time.
-        // For MVP, if one exists for this topic, reuse it.
+        const cluster = targetTopicData.subject;
+        const topic = targetTopicData.topic;
 
-        let dailyConcept = await DailyConcept.findOne({ topic: targetTopicData.topic }).sort({ createdAt: -1 });
-
-        // If it's too old or doesn't exist, generate.
-        // Let's say "too old" is > 30 days? Or just always reuse if found?
-        // Let's generate if not found.
-
-        if (!dailyConcept) {
-            const startTime = Date.now();
-            console.log(`Generating NEW content for ${targetTopicData.topic}...`);
-
-            let lessonData;
-            try {
-                lessonData = await generateLesson(targetTopicData.topic, targetTopicData.subject, targetTopicData.difficulty);
-                const validation = validateLesson(lessonData);
-
-                if (validation.isValid) {
-                    dailyConcept = new DailyConcept(lessonData);
-                    await dailyConcept.save();
-                } else {
-                    throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
-                }
-            } catch (err) {
-                console.error("Generation failed:", err);
-                // Fallback to error
-                return res.status(500).json({ error: "Failed to generate lesson content." });
-            }
+        // FETCH QUESTIONS
+        let lessonData;
+        try {
+            lessonData = await generateLesson(topic, cluster, targetTopicData.difficulty);
+        } catch (err) {
+            console.error("Failed to generate session content:", err);
+            return res.status(500).json({ error: "Failed to generate session content." });
         }
 
-        // Guard: Duplicate Prevention (Phase 6)
-        // Check if we selected this topic yesterday (Rotation Log)
-        const LearningEventLog = require('../models/LearningEventLog');
-        const yesterday = new Date(Date.now() - 86400000);
+        let questions = lessonData.questions || [];
+        let codingQuestions = lessonData.codingQuestions || [];
 
-        // If not from Revision Queue (which overrides duplicates), check history
-        if (selectionReason !== 'revision_queue') {
-            const lastRotation = await LearningEventLog.findOne({
-                userId,
-                eventType: 'ROTATION_SELECTED',
-                timestamp: { $gt: yesterday }
-            }).sort({ timestamp: -1 });
-
-            if (lastRotation && lastRotation.topicId === targetTopicData.topic) {
-                console.log(`⚠️ Prevented duplicate topic: ${targetTopicData.topic}. Reselecting...`);
-                // Simple fallback: pick random from roadmap that isn't this one
-                const candidates = ROADMAP_TOPICS.filter(t => t.topic !== targetTopicData.topic);
-                if (candidates.length > 0) {
-                    const fallback = candidates[Math.floor(Math.random() * candidates.length)];
-                    targetTopicData = fallback;
-                    selectionReason = 'duplicate_prevention_fallback';
-                }
-            }
+        // Fallback backward compatibility with old quiz structure from mock tests
+        if (questions.length === 0 && lessonData.quiz) {
+            questions = lessonData.quiz.map((q, i) => ({
+                id: `q${i}`,
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer
+            }));
         }
 
-        // LOG OBSERVABILITY EVENT
-        // We log *before* generating potential errors so we track intent
-        LearningEventLog.create({
+        const behavior = await computeBehavioralState(userId);
+
+        const expiresAt = new Date();
+        expiresAt.setUTCHours(23, 59, 59, 999);
+
+        session = new DailySession({
             userId,
-            topicId: targetTopicData.topic,
-            subject: targetTopicData.subject,
-            eventType: 'ROTATION_SELECTED',
-            previousMastery: 0, // Not applicable
-            newMastery: 0,
-            delta: 0,
-            meta: { selectionReason }
-        }).catch(err => console.error('Observability Log Failed:', err.message));
-
-        // Return the concept
-        res.json({
-            ...dailyConcept.toObject(),
-            meta: {
-                selectionReason,
-                topic: targetTopicData.topic
-            }
+            dateString: todayStr,
+            cluster: cluster,
+            topic: topic,
+            reason: selectionReason,
+            streakMeta: { streakDays: user?.streak || 0 },
+            behavioralState: behavior.state,
+            expiresAt,
+            questions,
+            codingQuestions
         });
 
+        await session.save();
+
+        res.json(session);
+
     } catch (err) {
-        console.error('Server Error in /today:', err);
+        if (err.code === 11000) {
+            const user = await User.findById(req.user.id);
+            const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: user?.timezone || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+            const session = await DailySession.findOne({ userId: req.user.id, dateString: todayStr });
+            if (session) return res.json(session);
+        }
+        console.error('Server Error in /daily/session:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

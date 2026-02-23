@@ -55,6 +55,12 @@ const MockSessionSchema = new mongoose.Schema({
         type: Number,   // 0-100, vs user's own history
         default: null
     },
+    // Multi-Track Type: CODING (DSA heavy) or MIXED
+    testType: {
+        type: String,
+        enum: ['CODING', 'MIXED'],
+        default: 'CODING'
+    },
     // Adaptive config recorded so we can explain the session to the user
     adaptiveConfig: {
         difficultyProfile: { type: String },   // e.g. "EASY_HEAVY" | "MIXED" | "HARD_HEAVY"

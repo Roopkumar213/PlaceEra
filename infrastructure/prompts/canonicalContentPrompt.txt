@@ -15,15 +15,28 @@ Return ONLY valid JSON with this exact structure:
     "language": "programming language",
     "code": "code snippet"
   },
-  "quiz": [
+  "questions": [
     {
+      "id": "q1",
       "question": "Question text",
       "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
       "correctAnswer": "Correct Option text"
-    },
-    ... (min 5 questions)
+    }
+  ],
+  "codingQuestions": [
+    {
+      "id": "cq1",
+      "title": "Coding Question Title",
+      "description": "Problem description",
+      "difficulty": "Medium",
+      "testCases": [
+        { "input": "input string", "output": "expected output" }
+      ]
+    }
   ]
 }
 
-Ensure the content is accurate and educational.
+- For `questions`, provide 10 to 15 multiple-choice questions.
+- For `codingQuestions`, provide 1 or 2 coding challenges (or 0 if inappropriate for topic).
+- Ensure the content is accurate and educational.
 Do not include any markdown formatting or comments outside the JSON.

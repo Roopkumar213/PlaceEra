@@ -115,6 +115,7 @@ async function getQuestionsForSubjectWithDifficulty(subjectName, totalCount, rat
 router.post('/start', auth, mockStartLimiter, async (req, res) => {
     try {
         const userId = req.user.id;
+        const testType = req.body?.testType || 'CODING';
 
         // 1. Concurrency Guard
         const active = await MockSession.findOne({ userId, status: 'IN_PROGRESS' });
@@ -126,12 +127,23 @@ router.post('/start', auth, mockStartLimiter, async (req, res) => {
         }
 
         // 2. Fetch subject readiness (sorted weakest → strongest)
-        const masteries = await SubjectMastery.find({ userId }).sort({ averageMastery: 1 });
-        if (masteries.length === 0) {
+        const allMasteries = await SubjectMastery.find({ userId }).sort({ averageMastery: 1 });
+        if (allMasteries.length === 0) {
             return res.status(400).json({
                 message: 'No performance history found. Complete initial quizzes to enable Mock Mode.'
             });
         }
+
+        // Apply Multi-Track filtering
+        let masteries = allMasteries;
+        if (testType === 'CODING') {
+            masteries = allMasteries.filter(m => !m.track || m.track === 'DSA'); // Default to DSA if no track
+        } else if (testType === 'MIXED') {
+            masteries = allMasteries.filter(m => !m.track || ['DSA', 'APTITUDE'].includes(m.track));
+        }
+
+        // Fallback if filter leaves no subjects
+        if (masteries.length === 0) masteries = allMasteries;
 
         // 3. Subject segmentation with V2 weighting
         const weakest = masteries[0];
@@ -201,6 +213,7 @@ router.post('/start', auth, mockStartLimiter, async (req, res) => {
         // 6. Persist session with adaptive config
         const session = new MockSession({
             userId,
+            testType,
             questionCount: allSelected.length,
             selectedQuestions: allSelected,
             adaptiveConfig: {

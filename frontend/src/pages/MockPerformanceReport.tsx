@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -151,7 +151,7 @@ const MockPerformanceReport: React.FC = () => {
                                                 </span>
                                                 <div
                                                     className={`w-full rounded-t-sm transition-all ${pt.score >= 70 ? 'bg-green-500' :
-                                                            pt.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                        pt.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                                                         }`}
                                                     style={{ height: `${Math.max(6, (pt.score / maxScore) * 112)}px` }}
                                                 />
@@ -246,7 +246,7 @@ const MockPerformanceReport: React.FC = () => {
                                             </span>
                                             <span>{p.score}%</span>
                                             <span className={`font-bold ${p.percentile !== null && p.percentile >= 70 ? 'text-green-500' :
-                                                    p.percentile !== null && p.percentile >= 40 ? 'text-yellow-500' : 'text-muted-foreground'
+                                                p.percentile !== null && p.percentile >= 40 ? 'text-yellow-500' : 'text-muted-foreground'
                                                 }`}>
                                                 {p.percentile !== null ? `P${p.percentile}` : '—'}
                                             </span>
