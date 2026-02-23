@@ -1,0 +1,79 @@
+{
+  "userId": "699baefc1eff4bb54e41a468",
+  "dateString": "2026-02-23",
+  "cluster": "Programming Basics",
+  "topic": "Variables",
+  "reason": "weighted_bucket_primary_fallback",
+  "streakMeta": {
+    "streakDays": 0
+  },
+  "behavioralState": "COLD_START",
+  "expiresAt": "2026-02-23T23:59:59.999Z",
+  "questions": [
+    {
+      "id": "q0",
+      "question": "Q1?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": "A",
+      "_id": "699bafd10658685108ba48a1"
+    },
+    {
+      "id": "q1",
+      "question": "Q2?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": "B",
+      "_id": "699bafd10658685108ba48a2"
+    },
+    {
+      "id": "q2",
+      "question": "Q3?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": "C",
+      "_id": "699bafd10658685108ba48a3"
+    },
+    {
+      "id": "q3",
+      "question": "Q4?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": "D",
+      "_id": "699bafd10658685108ba48a4"
+    },
+    {
+      "id": "q4",
+      "question": "Q5?",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": "A",
+      "_id": "699bafd10658685108ba48a5"
+    }
+  ],
+  "codingQuestions": [],
+  "_id": "699bafd10658685108ba48a0",
+  "createdAt": "2026-02-23T01:39:29.832Z",
+  "updatedAt": "2026-02-23T01:39:29.832Z",
+  "__v": 0
+}

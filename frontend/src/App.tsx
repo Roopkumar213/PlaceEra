@@ -17,6 +17,7 @@ import Consistency from './pages/Consistency';
 import MockHistory from './pages/MockHistory';
 import MockPerformanceReport from './pages/MockPerformanceReport';
 import UserAnalyticsDashboard from './pages/UserAnalyticsDashboard';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -39,7 +40,7 @@ function App() {
             <Route path="/mock" element={<MockHistory />} />
             <Route path="/mock/report" element={<MockPerformanceReport />} />
             <Route path="/analytics" element={<UserAnalyticsDashboard />} />
-            <Route path="/settings" element={<div className="p-8">Settings (Coming Soon)</div>} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
 
