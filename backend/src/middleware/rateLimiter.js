@@ -39,7 +39,22 @@ const mockStartLimiter = rateLimit({
     keyGenerator: (req) => req.user ? `user:${req.user.id}` : `ip:${req.socket.remoteAddress}`
 });
 
+const dailySessionLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 5, // Max 5 calls per 5 mins
+    message: {
+        success: false,
+        message: 'Too many session requests. Try again in 5 minutes.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    validate: { xForwardedForHeader: false },
+    skip: () => process.env.NODE_ENV === 'test',
+    keyGenerator: (req) => req.user ? `user:${req.user.id}` : `ip:${req.socket.remoteAddress}`
+});
+
 module.exports = {
     submissionLimiter,
-    mockStartLimiter
+    mockStartLimiter,
+    dailySessionLimiter
 };

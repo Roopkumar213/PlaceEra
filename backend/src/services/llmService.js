@@ -33,35 +33,51 @@ async function generateLesson(topic, subject, difficulty) {
             return getMockLesson(topic, subject, difficulty);
         }
 
-        // Call LLM API (Example using generic OpenAI-compatible endpoint)
-        // Adjust logic based on actual provider
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: "gpt-3.5-turbo", // Or "gpt-4"
-            messages: [
-                { role: "system", content: "You are a helpful assistant that outputs strict JSON." },
-                { role: "user", content: prompt }
-            ],
-            temperature: 0.2,
-            max_tokens: 1500
-        }, {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        // Add 5 second timeout to Axios request
+        const source = axios.CancelToken.source();
+        const timeout = setTimeout(() => {
+            source.cancel(`Request timed out after 5 seconds.`);
+        }, 5000);
 
-        const content = response.data.choices[0].message.content;
-
-        // Attempt to parse JSON
         try {
-            // Find JSON substring if there's extra text
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            const jsonString = jsonMatch ? jsonMatch[0] : content;
-            return JSON.parse(jsonString);
-        } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Raw Output:', content);
-            throw new Error('Failed to parse LLM response as JSON.');
+            // Call LLM API (Example using generic OpenAI-compatible endpoint)
+            const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+                model: "gpt-3.5-turbo", // Or "gpt-4"
+                messages: [
+                    { role: "system", content: "You are a helpful assistant that outputs strict JSON." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.2,
+                max_tokens: 1500
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                cancelToken: source.token
+            });
+            clearTimeout(timeout);
+
+            const content = response.data.choices[0].message.content;
+
+            // Attempt to parse JSON
+            try {
+                // Find JSON substring if there's extra text
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                const jsonString = jsonMatch ? jsonMatch[0] : content;
+                return JSON.parse(jsonString);
+            } catch (parseError) {
+                console.error('JSON Parse Error:', parseError);
+                console.error('Raw Output:', content);
+                throw new Error('Failed to parse LLM response as JSON.');
+            }
+        } catch (axiosError) {
+            clearTimeout(timeout);
+            if (axios.isCancel(axiosError)) {
+                console.warn('LLM Request timed out, falling back to mock response.');
+                return getMockLesson(topic, subject, difficulty);
+            }
+            throw axiosError;
         }
 
     } catch (error) {

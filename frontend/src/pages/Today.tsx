@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import axios from 'axios';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card, CardContent } from '../components/ui/card';
@@ -41,6 +41,7 @@ interface DailySession {
 
 export const Today: React.FC = () => {
     const navigate = useNavigate();
+    const { mutate } = useSWRConfig();
     const token = localStorage.getItem('token') || '';
 
     // API Fetch
@@ -110,6 +111,10 @@ export const Today: React.FC = () => {
 
             setResult(res.data);
             setView('results');
+
+            // Revalidate SWR data after successful submission
+            mutate(`${import.meta.env.VITE_API_BASE_URL}/api/daily/session`);
+            mutate(`${import.meta.env.VITE_API_BASE_URL}/api/progress/dashboard`);
         } catch (err: any) {
             console.error("Quiz submission logic failed or backend mismatch:", err);
 
@@ -132,6 +137,9 @@ export const Today: React.FC = () => {
                     unlockedTopics: ['Advanced Algorithms']
                 });
                 setView('results');
+
+                // Still revalidate to clear cached potentially stale dashboard state
+                mutate(`${import.meta.env.VITE_API_BASE_URL}/api/progress/dashboard`);
             } else {
                 setSubmitError('Failed to sync. Connection error.');
                 setView('error');

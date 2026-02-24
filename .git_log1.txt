@@ -1,0 +1,8 @@
+﻿commit 6d7a8a63808dea77817f4581b221849ba8799c90
+Merge: 13e64cd 165073f
+Author: A ROOP KUMAR <roopkumar3244@gmail.com>
+Date:   Mon Feb 23 07:16:06 2026 +0530
+
+    Merge pull request #13 from Roopkumar213/feature/email-automation-system
+    
+    Implemented the Email-Automation and Updates setting

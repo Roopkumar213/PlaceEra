@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const User = require('../../src/models/User');
 const DailySession = require('../../src/models/DailySession');
 const db = require('../setup');
+const { ensureDailyContentGenerated } = require('../../src/jobs/midnightWorker');
+const DailyGlobalContent = require('../../src/models/DailyGlobalContent');
 
 jest.mock('../../src/services/llmService', () => ({
     generateLesson: jest.fn().mockImplementation(async () => {
@@ -44,6 +46,7 @@ describe('Unified Daily Session API Verification', () => {
         // Clean db
         await User.deleteMany({});
         await DailySession.deleteMany({});
+        await DailyGlobalContent.deleteMany({});
 
         // Create user
         const res = await request(app)
@@ -60,6 +63,9 @@ describe('Unified Daily Session API Verification', () => {
     });
 
     test('Identical session returned on repeat calls to /api/daily/session', async () => {
+        // Run global generator
+        await ensureDailyContentGenerated();
+
         // 1. First Call: Generates session
         const firstRes = await request(app)
             .get('/api/daily/session')

@@ -15,9 +15,11 @@ mongoose.connect(MONGO_URI, {
 if (process.env.REDIS_ENABLED !== 'false' && process.env.NODE_ENV !== 'test') {
     const startDecayJob = require('./jobs/masteryDecayJob');
     const startEmailScheduler = require('./jobs/emailScheduler');
+    const { startMidnightWorker } = require('./jobs/midnightWorker');
+    startMidnightWorker();
     startDecayJob();
     startEmailScheduler();
-    console.log('📡 Queue System: Enabled (Decay & Email Scheduler)');
+    console.log('📡 Queue System: Enabled (Decay & Email Scheduler & Midnight Worker)');
 } else if (process.env.NODE_ENV !== 'test') {
     console.log('📡 Queue System: Disabled (Local Mode)');
 }

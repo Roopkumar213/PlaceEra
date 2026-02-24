@@ -121,20 +121,17 @@ describe('Multi-Track Adaptive Engine V2 Verification', () => {
         expect(recRes.body.topicId).toBe('Sorting');
     });
 
-    test('Daily engine creates primary and secondary track plans', async () => {
+    test('Daily engine creates primary global track plan', async () => {
+        const { ensureDailyContentGenerated } = require('../../src/jobs/midnightWorker');
+        await ensureDailyContentGenerated();
+
         const todayRes = await request(app)
-            .get('/api/today')
+            .get('/api/daily/session')
             .set('Authorization', `Bearer ${token}`);
 
         expect(todayRes.statusCode).toBe(200);
         expect(todayRes.body).toHaveProperty('topic');
-        expect(todayRes.body.meta).toHaveProperty('secondaryBlock');
-
-        // Check the secondary block structure
-        const sb = todayRes.body.meta.secondaryBlock;
-        expect(['APTITUDE', 'DEV', 'DEVOPS']).toContain(sb.track);
-        expect(sb).toHaveProperty('subject');
-        expect(sb).toHaveProperty('topic');
+        expect(todayRes.body).toHaveProperty('cluster');
     });
 
 });

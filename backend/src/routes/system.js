@@ -5,6 +5,7 @@ const LearningEventLog = require('../models/LearningEventLog');
 const RevisionQueue = require('../models/RevisionQueue');
 const SubjectMastery = require('../models/SubjectMastery');
 const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // Rate limit: Rebuild is expensive — max 3 per hour per user
@@ -19,7 +20,7 @@ const rebuildLimiter = rateLimit({
 });
 
 // GET /api/system/metrics
-router.get('/metrics', authMiddleware, async (req, res) => {
+router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const masteryStats = await TopicMastery.aggregate([
             {

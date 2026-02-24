@@ -70,30 +70,7 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // DEMO LOGIN BYPASS
-        if (email === 'demo@elevare.com' && password === 'demo123') {
-            // Use a valid 24-char ObjectId for the demo user
-            const demoId = '507f1f77bcf86cd799439011';
-            const payload = { id: demoId };
-
-            jwt.sign(
-                payload,
-                process.env.JWT_SECRET,
-                { expiresIn: '30d' },
-                (err, token) => {
-                    if (err) throw err;
-                    res.json({
-                        token,
-                        user: {
-                            id: demoId,
-                            name: 'Demo User',
-                            email: 'demo@elevare.com'
-                        }
-                    });
-                }
-            );
-            return;
-        }
+        // Demo bypass removed
 
         let user = await User.findOne({ email });
         if (!user) {

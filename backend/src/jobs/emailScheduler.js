@@ -155,7 +155,7 @@ const processScheduledEmails = async () => {
             }
 
         } catch (err) {
-            console.error(`[EmailScheduler] Failed processing for user ${user._id}:`, err);
+            console.error(`[EmailScheduler:FailureTag] Failed processing for user ${user._id}:`, err);
         }
     }
 };
