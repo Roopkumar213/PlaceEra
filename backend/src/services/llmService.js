@@ -99,13 +99,20 @@ function getMockLesson(topic, subject, difficulty) {
             language: "javascript",
             code: "console.log('Hello Mock World');"
         },
-        quiz: [
-            { question: "Q1?", options: ["A", "B", "C", "D"], correctAnswer: "A" },
-            { question: "Q2?", options: ["A", "B", "C", "D"], correctAnswer: "B" },
-            { question: "Q3?", options: ["A", "B", "C", "D"], correctAnswer: "C" },
-            { question: "Q4?", options: ["A", "B", "C", "D"], correctAnswer: "D" },
-            { question: "Q5?", options: ["A", "B", "C", "D"], correctAnswer: "A" }
-        ]
+        quiz: Array.from({ length: 25 }).map((_, i) => {
+            let diff = 'MEDIUM';
+            if (i < 8) diff = 'EASY';
+            else if (i > 16) diff = 'HARD';
+            return {
+                id: `mq${i}`,
+                question: `${diff} Question ${i}?`,
+                options: ["A", "B", "C", "D"],
+                correctAnswer: "A",
+                difficulty: diff,
+                conceptTag: topic,
+                baseWeight: diff === 'HARD' ? 3 : diff === 'MEDIUM' ? 2 : 1
+            };
+        })
     });
 }
 

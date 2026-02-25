@@ -15,7 +15,10 @@ const mcqSchema = new mongoose.Schema({
     id: { type: String, required: true },
     question: { type: String, required: true },
     options: [{ type: String, required: true }],
-    correctAnswer: { type: String, required: true }
+    correctAnswer: { type: String, required: true },
+    difficulty: { type: String, enum: ['EASY', 'MEDIUM', 'HARD'], default: 'MEDIUM' },
+    conceptTag: { type: String, default: 'general' },
+    baseWeight: { type: Number, default: 1 }
 });
 
 const dailyGlobalContentSchema = new mongoose.Schema({

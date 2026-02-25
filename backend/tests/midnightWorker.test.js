@@ -72,14 +72,12 @@ describe('Midnight Worker & Global Daily Content Integration', () => {
 
         expect(res2.status).toBe(200);
 
-        // They must receive the same questions
+        // They must receive questions from the same global topic
         expect(res1.body.questions.length).toBeGreaterThan(0);
         expect(res2.body.questions.length).toBeGreaterThan(0);
 
-        const ids1 = res1.body.questions.map(q => q.id).sort();
-        const ids2 = res2.body.questions.map(q => q.id).sort();
-
-        expect(ids1).toEqual(ids2);
+        expect(res1.body.topic).toEqual(res2.body.topic);
+        expect(res1.body.cluster).toEqual(res2.body.cluster);
 
         // Assert NO LLM call behavior during request - implicitly true if we bypass LLM in endpoint logic and ONLY use standard fetching
     });

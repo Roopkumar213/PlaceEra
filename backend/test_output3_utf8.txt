@@ -1,0 +1,1276 @@
+﻿
+> backend@1.0.0 test
+> jest --runInBand --detectOpenHandles
+
+node.exe : FAIL tests/integra
+tion/adaptiveCalibration.test
+.js (12.16 s)
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (FAIL te  
+  sts/inte...st.js (12.16    
+ s):String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ΓÜÖ∩╕Å  write to 
+custom object with { 
+processEnv: myObject }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  load 
+multiple .env files with { 
+path: ['.env.local', '.env'] 
+}
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ΓÜÖ∩╕Å  write to 
+custom object with { 
+processEnv: myObject }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+  ΓùÅ Adaptive Difficulty 
+Calibration Integration ΓÇ║ 
+should assign easier 
+questions to beginner and 
+harder questions to advanced 
+deterministically
+
+    expect(received).toBe(exp
+ected) // Object.is equality
+
+    Expected: 7
+    Received: 0
+
+    [0m [90m 106 |[39m
+     [90m 107 |[39m        
+ [90m// Beginner expects 7 
+EASY, 3 MEDIUM, 0 HARD[39m
+    
+[31m[1m>[22m[39m[90m 
+108 |[39m         expect(beg
+Dist[33m.[39m[33mEASY[39m
+)[33m.[39mtoBe([35m7[39m)
+[33m;[39m
+     [90m     |[39m        
+                      
+[31m[1m^[22m[39m
+     [90m 109 |[39m        
+ expect(begDist[33m.[39m[3
+3mMEDIUM[39m)[33m.[39mtoBe
+([35m3[39m)[33m;[39m
+     [90m 110 |[39m        
+ expect(begDist[33m.[39m[3
+3mHARD[39m)[33m.[39mtoBe(
+[35m0[39m)[33m;[39m
+     [90m 111 |[39m[0m
+
+      at Object.toBe (tests/i
+ntegration/adaptiveCalibratio
+n.test.js:108:30)
+
+PASS tests/integration/mock.a
+nalytics.test.js (33.207 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ≡ƒöÉ encrypt with 
+Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ≡ƒöÉ encrypt 
+with Dotenvx: 
+https://dotenvx.com
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒöÉ prevent 
+building .env in docker: 
+https://dotenvx.com/prebuild
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c3ea89538c89181bc14 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c3ea89538c89181bc14 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c3ea89538c89181bc14 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c40a89538c89181bd48 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c40a89538c89181bd48 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c40a89538c89181bd48 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c42a89538c89181be7c 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c42a89538c89181be7c 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c42a89538c89181be7c 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c46a89538c89181bfcf 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c46a89538c89181bfcf 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c46a89538c89181bfcf 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4aa89538c89181c199 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4aa89538c89181c199 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4aa89538c89181c199 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4da89538c89181c350 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4da89538c89181c350 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c4da89538c89181c350 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c50a89538c89181c505 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c50a89538c89181c505 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c50a89538c89181c505 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c52a89538c89181c5da 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c52a89538c89181c5da 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c52a89538c89181c5da 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+PASS tests/integration/behavi
+oral.test.js (16.322 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ΓÜí∩╕Å secrets for 
+agents: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  
+suppress all logs with { 
+quiet: true }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ΓÜÖ∩╕Å  enable debug 
+logging with { debug: true }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c5c8b130c27906555d2
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c5c8b130c27906555d2
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c618b130c27906556a6
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c618b130c27906556a6
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c618b130c27906556cc
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c618b130c27906556cc
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+PASS tests/integration/securi
+ty.test.js (13.944 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ΓÜÖ∩╕Å  load 
+multiple .env files with { 
+path: ['.env.local', '.env'] 
+}
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  
+write to custom object with 
+{ processEnv: myObject }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒöÉ prevent 
+building .env in docker: 
+https://dotenvx.com/prebuild
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c68b147aff4ccf597c8 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c68b147aff4ccf597c8 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c68b147aff4ccf597c8 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c6eb147aff4ccf59a76 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c6eb147aff4ccf59a76 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c6eb147aff4ccf59a76 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+PASS tests/integration/fullfl
+ow.v2.test.js (13.334 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ≡ƒñû agentic secret 
+storage: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  
+specify custom .env file 
+path with { path: 
+'/custom/path/.env' }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒ¢á∩╕Å  run 
+anywhere with `dotenvx run 
+-- yourcommand`
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c769584018f2c812523
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c769584018f2c812523
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c7a9584018f2c8126df 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c7a9584018f2c8126df 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c7b9584018f2c812815
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c7b9584018f2c812815
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c7d9584018f2c8128fe
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c7d9584018f2c8128fe
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+PASS 
+tests/midnightWorker.test.js 
+(7.225 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ≡ƒöÉ encrypt with 
+Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ≡ƒ¢í∩╕Å auth 
+for agents: 
+https://vestauth.com
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒñû agentic secret 
+storage: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: 
+Recursion
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+32:9)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: 
+Variables
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+          at async 
+Promise.all (index 0)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: Loops
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+          at async 
+Promise.all (index 1)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: Arrays
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+          at async 
+Promise.all (index 2)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: Arrays
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+          at async 
+Promise.all (index 3)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+          at async 
+Promise.all (index 0)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+39:9)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+          at async 
+Promise.all (index 0)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+          at async 
+Promise.all (index 1)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+39:9)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+          at async 
+Promise.all (index 2)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+39:9)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+          at async 
+Promise.all (index 3)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+39:9)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+          at async 
+Promise.all (index 1)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+          at async 
+Promise.all (index 2)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+          at async 
+Promise.all (index 3)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: 
+Recursion
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+      at Object.<anonymous> (
+tests/midnightWorker.test.js:
+52:9)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+
+PASS tests/integration/multit
+rack.test.js (5.211 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ΓÜÖ∩╕Å  override 
+existing env vars with { 
+override: true }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ≡ƒöÉ prevent 
+committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒñû agentic secret 
+storage: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: 
+Variables
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+
+    console.error
+      LLM Service Error, 
+falling back to mock 
+response: Request failed 
+with status code 401
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     } 
+[36mcatch[39m (error) {
+    
+[31m[1m>[22m[39m[90m 84 
+|[39m         console[33m.
+[39merror([32m'LLM Service 
+Error, falling back to mock 
+response:'[39m[33m,[39m er
+ror[33m.[39mmessage)[33m;
+[39m
+     [90m    |[39m         
+        [31m[1m^[22m[39m
+     [90m 85 |[39m         
+[36mreturn[39m getMockLesso
+n(topic[33m,[39m 
+subject[33m,[39m 
+difficulty)[33m;[39m
+     [90m 86 |[39m     }
+     [90m 87 |[39m }[0m
+
+      at error (src/services/
+llmService.js:84:17)
+      at 
+ensureDailyContentGenerated (
+src/jobs/midnightWorker.js:81
+:26)
+      at Object.<anonymous> (
+tests/integration/multitrack.
+test.js:126:9)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+
+PASS tests/integration/mock.t
+est.js (5.595 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ΓÜÖ∩╕Å  enable debug 
+logging with { debug: true }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ≡ƒñû agentic 
+secret storage: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ΓÜí∩╕Å secrets for 
+agents: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c8ff29032e5c32cbfa1 
+auto-initialized & unlocked 
+topic: Big O Notation
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c8ff29032e5c32cbfa1 
+auto-initialized & unlocked 
+topic: Linked Lists
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c8ff29032e5c32cbfa1 
+auto-initialized & unlocked 
+topic: Sorting
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+PASS tests/integration/flow.t
+est.js
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ≡ƒñû agentic secret 
+storage: 
+https://dotenvx.com/as2
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  
+write to custom object with 
+{ processEnv: myObject }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒöÉ prevent 
+committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MasteryInit] 
+Initializing mastery for 
+user: 
+699e4c94e7b0ea071bd98798
+
+      at log (src/services/ma
+steryService.js:32:21)
+
+    console.log
+      [MasteryInit] 
+Successfully initialized 
+mastery for user: 
+699e4c94e7b0ea071bd98798
+
+      at log (src/services/ma
+steryService.js:96:17)
+
+    console.log
+      [MasteryUnlock] User 
+699e4c94e7b0ea071bd98798 
+auto-initialized & unlocked 
+topic: Basic Math
+
+      at log (src/services/ma
+steryService.js:218:29)
+
+PASS tests/integration/dailyS
+ession.test.js
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (6) from .env 
+-- tip: ≡ƒöÉ prevent 
+building .env in docker: 
+https://dotenvx.com/prebuild
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (5) from 
+..\.env -- tip: ΓÜÖ∩╕Å  
+write to custom object with 
+{ processEnv: myObject }
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [dotenv@17.3.1] 
+injecting env (0) from .env 
+-- tip: ≡ƒöÉ encrypt with 
+Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/d
+otenv/lib/main.js:139:11)
+
+    console.log
+      [MidnightWorker] 
+Generating daily content for 
+2026-02-25 on topic: 
+Functions
+
+      at log (src/jobs/midnig
+htWorker.js:77:17)
+
+    console.log
+      [MidnightWorker] 
+Global content generated and 
+saved for 2026-02-25
+
+      at log (src/jobs/midnig
+htWorker.js:125:17)
+
+PASS 
+tests/unit/engine.test.js
+
+Test Suites: 1 failed, 10 
+passed, 11 total
+Tests:       1 failed, 60 
+passed, 61 total
+Snapshots:   0 total
+Time:        116.38 s
+Ran all test suites.

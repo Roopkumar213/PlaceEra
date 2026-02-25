@@ -86,8 +86,9 @@ async function ensureDailyContentGenerated() {
                 topic: targetTopicData.topic,
                 subject: targetTopicData.subject,
                 questions: [
-                    { id: 'mq1', question: `Static fallback question for ${targetTopicData.topic}`, options: ['A', 'B', 'C', 'D'], correctAnswer: 'A' },
-                    { id: 'mq2', question: `Static fallback question 2 for ${targetTopicData.topic}`, options: ['A', 'B', 'C', 'D'], correctAnswer: 'B' }
+                    { id: 'mq1', question: `EASY Static fallback question for ${targetTopicData.topic}`, options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', difficulty: 'EASY', conceptTag: targetTopicData.topic, baseWeight: 1 },
+                    { id: 'mq2', question: `MEDIUM Static fallback question for ${targetTopicData.topic}`, options: ['A', 'B', 'C', 'D'], correctAnswer: 'B', difficulty: 'MEDIUM', conceptTag: targetTopicData.topic, baseWeight: 2 },
+                    { id: 'mq3', question: `HARD Static fallback question for ${targetTopicData.topic}`, options: ['A', 'B', 'C', 'D'], correctAnswer: 'C', difficulty: 'HARD', conceptTag: targetTopicData.topic, baseWeight: 3 }
                 ],
                 codingQuestions: []
             };
